@@ -1,8 +1,11 @@
 #-*- coding:UTF-8 -*-
 import sys
 
-from es.uned.tfg.myloyalfilmer.model.Initializer import Initializer
-from es.uned.tfg.myloyalfilmer.model.robot.Robot import Robot
+from model.Initializer import Initializer
+from model.robot.Robot import Robot
+
+
+
 
 def main() -> int:
     initializer = Initializer()
