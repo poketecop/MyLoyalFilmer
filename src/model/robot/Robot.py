@@ -58,31 +58,30 @@ class Robot:
                 # Handle right acute angle and right right angle
                 elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
                     # Turn right in place,speed is 100,delay 80ms
-                    self.motors.spin_right(35, 35)
-                    time.sleep(0.08)
+                    self.motors.sharp_right()
         
                 # Handle left acute angle and left right angle 
                 elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
                     # Turn right in place,speed is 100,delay 80ms  
-                    self.motors.spin_left(35, 35)
-                    time.sleep(0.08)
+                    self.motors.sharp_left()
         
                 # Left_sensor1 detected black line
                 elif self.tracking_module.left_sensor_1_detected_black_line():
-                    self.motors.spin_left(35, 35)
+                    self.motors.spin_left()
             
                 # Right_sensor2 detected black line
                 elif self.tracking_module.right_sensor2_detected_black_line():
-                    self.motors.spin_right(35, 35)
+                    self.motors.spin_right()
         
                 elif self.tracking_module.middle_right_sensor_misses_black_line():
-                    self.motors.left(0,40)
+                    self.motors.left()
         
                 elif self.tracking_module.middle_left_sensor_misses_black_line():
-                    self.motors.right(40, 0)
+                    self.motors.right()
 
                 elif self.tracking_module.both_middle_sensors_over_black_line():
-                    self.motors.run(50, 50)
+                    self.motors.run()
+                    
                 # When the every sensor is NOT over the black line, the car keeps the previous running state.
         
         except KeyboardInterrupt:
