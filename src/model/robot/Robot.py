@@ -2,6 +2,7 @@
 
 import RPi.GPIO as GPIO
 import time
+from model.robot.Camera import Camera
 
 from model.robot.Motors import Motors
 from model.robot.TrackingModule import TrackingModule
@@ -11,15 +12,18 @@ DEFAULT_PROCESS_TIMEOUT = 10
 class Robot:
 
     motors = None
+    camera = None
     tracking_module = None
     process_timeout = None
 
-    def __init__(self):
+    def __init__(self, process_timeout = DEFAULT_PROCESS_TIMEOUT):
         self.init_pin_numbering_mode()
-
+        self.process_timeout = process_timeout
+        
         self.motors = Motors()
         self.tracking_module = TrackingModule()
-        self.process_timeout = DEFAULT_PROCESS_TIMEOUT
+        self.camera = Camera(process_timeout = process_timeout)
+        
         
     def init_pin_numbering_mode(self):
         # Set the GPIO port to BCM encoding mode.

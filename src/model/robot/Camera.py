@@ -7,6 +7,8 @@ import numpy as np
 
 from model.robot.CameraServos import CameraServos
 
+from datetime import datetime as dt
+
 class TrackableColor(Enum):
     RED = 1
     GREEN = 2
@@ -29,30 +31,102 @@ YELLOW__COLOR_UPPER = np.array([34, 255, 255])
 ORANGE_COLOR_LOWER = np.array([11, 43, 46])
 ORANGE_COLOR_UPPER = np.array([25, 255, 255])
 
+VIDEO_WRITER_FOURCC = cv2.VideoWriter.fourcc('M', 'J', 'P', 'G')
+
 class Camera:
 
     color_lower = None
     color_upper = None
     camera_servos = None
+    result = None
+    image = None
+    process_timeout = None
 
-    def __init__(self, color = TrackableColor.RED):
+    def __init__(self, process_timeout, color = TrackableColor.RED):
         self.camera_servos = CameraServos()
+        self.process_timeout = process_timeout
     
     #bgr8 to jpeg format
     def bgr8_to_jpeg(value, quality=75):
         return bytes(cv2.imencode('.jpg', value)[1])
 
+    def init_film_capture(self):
+        self.image = cv2.VideoCapture(0)
+        self.image.set(3, 640)
+        self.image.set(4, 480)
+        self.image.set(5, 120)   #set frame
+        self.image.set(cv2.CAP_PROP_FOURCC, VIDEO_WRITER_FOURCC)
+        self.image.set(cv2.CAP_PROP_BRIGHTNESS, 20) #set brihtgness -64 - 64  0.0
+        self.image.set(cv2.CAP_PROP_CONTRAST, 20)   #set contrast -64 - 64  2.0
+
+    def init_film_saving(self):
+        # We need to set resolutions.
+        # so, convert them from float to integer.
+        frame_width = int(self.image.get(3))
+        frame_height = int(self.image.get(4))
+        
+        size = (frame_width, frame_height)
+        
+        # Below VideoWriter object will create
+        # a frame of above defined The output 
+        # is stored in 'filename.avi' file.
+
+        file_name = dt.now().strftime('%a_%d_%m_%Y_%H_%M_%S')
+
+        self.result = cv2.VideoWriter('/home/pi/Video/' + file_name + '.avi', 
+                                VIDEO_WRITER_FOURCC,
+                                10, size)
+
+    def finish_filming(self):
+        # When everything done, release 
+        # the video capture and video 
+        # write objects
+        self.image.release()
+        self.result.release()
+            
+        # Closes all the frames
+        cv2.destroyAllWindows()
+        
+        print("The video was successfully saved")
+
+    def film(self):
+        self.init_film_capture(self)
+        self.init_film_saving(self)
+
+        while(True):
+            ret, frame = self.image.read()
+        
+            if not ret:
+                # Break the loop
+                break
+        
+            # Write the frame into the
+            # file 'filename.avi'
+            self.result.write(frame)
+
+        self.finish_filming()
+
     def color_track(self):
-        global target_valuex, target_valuey
         t_start = time.time()
-        fps = 0
+
+        self.init_film_capture(self)
+        self.init_film_saving(self)
+        
         times = 0
-        while True:
-            ret, frame = image.read()
+        while time.time() < t_start + self.process_timeout:
+            ret, frame = self.image.read()
+
+            if not ret:
+                # Break the loop
+                break
+
+            # Write the frame into the
+            # file 'filename.avi'
+            self.result.write(frame)
+
             frame = cv2.resize(frame, (300, 300))
-            frame_ = cv2.GaussianBlur(frame,(5,5),0)                    
             hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
-            mask = cv2.inRange(hsv,color_lower,color_upper)  
+            mask = cv2.inRange(hsv,self.color_lower,self.color_upper)  
             mask = cv2.erode(mask,None,iterations=2)
             mask = cv2.dilate(mask,None,iterations=2)
             mask = cv2.GaussianBlur(mask,(3,3),0)     
@@ -66,16 +140,18 @@ class Camera:
                     times =  times +  1
                     # Mark the detected colors
                     # Proportion-Integration-Differentiation
-                    xservo_pid.SystemOutput = color_x
-                    xservo_pid.SetStepSignal(150)
-                    xservo_pid.SetInertiaTime(0.01, 0.1)
-                    target_valuex = int(1500+xservo_pid.SystemOutput)
-                    yservo_pid.SystemOutput = color_y
-                    yservo_pid.SetStepSignal(150)
-                    yservo_pid.SetInertiaTime(0.01, 0.1)
-                    target_valuey = int(1500+yservo_pid.SystemOutput)
+                    self.camera_servos.xservo_pid.SystemOutput = color_x
+                    self.camera_servos.xservo_pid.SetStepSignal(150)
+                    self.camera_servos.xservo_pid.SetInertiaTime(0.01, 0.1)
+                    target_valuex = int(1500+self.camera_servos.xservo_pid.SystemOutput)
+                    self.camera_servos.yservo_pid.SystemOutput = color_y
+                    self.camera_servos.yservo_pid.SetStepSignal(150)
+                    self.camera_servos.yservo_pid.SetInertiaTime(0.01, 0.1)
+                    target_valuey = int(1500+self.camera_servos.yservo_pid.SystemOutput)
                     time.sleep(0.008)
                     
                     if times == 5 :
                         times = 0 
                         self.camera_servos.servo_control(target_valuex,target_valuey)
+
+        self.finish_filming()
