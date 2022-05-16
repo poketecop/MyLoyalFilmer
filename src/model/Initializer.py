@@ -2,7 +2,8 @@ import re
 import subprocess
 
 SYSTEM_PASSWORD = b'yahboom\n'
-PS_STDOUT_SEPARATOR = r'\s+'
+PS_BLUETOOTH_CONTROL_REGEX = re.compile(r'pi\s+(\d+).*bluetooth_control')
+PS_MJPG_STREAMER_REGEX = re.compile(r'pi\s+(\d+).*mjpg_streamer')
 PS_STDOUT_SPLITTED_PID_POSITION = 1
 
 class Initializer:    
@@ -14,43 +15,36 @@ class Initializer:
     def kill_demanding_processes(self):
         # Kill demanding processes
 
-        stdout, stderr = subprocess.Popen(['ps', '-ef|grep', 'bluetooth_control'],
+        stdout, stderr = subprocess.Popen(['ps', '-ef'],
                             stdout = subprocess.PIPE, 
                             stderr = subprocess.PIPE).communicate()
         if stderr:
-            print(stderr)
+            print(stderr.decode('utf-8'))
             return
 
-        if stdout:
-            print(stdout)
-            bluetooth_control_pid = re.split(PS_STDOUT_SEPARATOR, stdout)[PS_STDOUT_SPLITTED_PID_POSITION]
+        if not stdout:
+            return
 
-            stdout, stderr = subprocess.Popen(['ps', '-ef|grep', 'mjpg_streamer'],
-                                stdout = subprocess.PIPE, 
-                                stderr = subprocess.PIPE).communicate()
+        ps_stdout_str = stdout.decode('utf-8')
+        print(ps_stdout_str)
+        matching = re.search(PS_BLUETOOTH_CONTROL_REGEX, ps_stdout_str)
+
+        if matching:
+            bluetooth_control_pid = matching.group(1)
+
+            stdout, stderr = subprocess.Popen(['sudo', 'kill', '-9', bluetooth_control_pid],
+                        stdout = subprocess.PIPE, 
+                        stderr = subprocess.PIPE).communicate(input=SYSTEM_PASSWORD)
             if stderr:
-                print(stderr)
-                return
+                print(stderr.decode('utf-8'))
+        
+        matching = re.search(PS_MJPG_STREAMER_REGEX, ps_stdout_str)
+
+        if matching:
+            mjpg_streamer_pid = matching.group(1)
             
-            print(stdout)
-
-        mjpg_streamer_pid = re.split(PS_STDOUT_SEPARATOR, stdout)[PS_STDOUT_SPLITTED_PID_POSITION]
-
-        stdout, stderr = subprocess.Popen(['sudo', 'kill', '-9', bluetooth_control_pid],
-                            stdout = subprocess.PIPE, 
-                            stderr = subprocess.PIPE).communicate(input=SYSTEM_PASSWORD)
-        if stderr:
-            print(stderr)
-            return
-
-        if stdout:
-            print(stdout)
-
             stdout, stderr = subprocess.Popen(['sudo', 'kill', '-9', mjpg_streamer_pid],
-                                stdout = subprocess.PIPE, 
-                                stderr = subprocess.PIPE).communicate()
+                            stdout = subprocess.PIPE, 
+                            stderr = subprocess.PIPE).communicate()
             if stderr:
-                print(stderr)
-                return
-
-            print(stdout)
+                print(stderr.decode('utf-8'))

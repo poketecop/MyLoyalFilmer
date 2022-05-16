@@ -20,6 +20,9 @@ def main(argv) -> int:
     if 'desireddutycycle' in parameter_list:
         robot.motors.init_desired_duty_cycle(int(parameter_list['desireddutycycle']))
     
+    if 'processtimeout' in parameter_list:
+        robot.process_timeout = int(parameter_list['processtimeout'])
+    
     robot.track_line()
 
     return 0
