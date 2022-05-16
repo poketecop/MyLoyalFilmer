@@ -1,1 +1,2 @@
-RPi.GPIO==0.7.1
+#RPi.GPIO==0.7.1
+opencv-python==4.5.5.64
