@@ -5,7 +5,6 @@ import cv2
 import time
 import numpy as np
 
-import CameraServos
 from model.robot.CameraServos import CameraServos as Servos
 
 from datetime import datetime as dt
@@ -43,9 +42,12 @@ class Camera:
     image = None
     process_timeout = None
 
-    def __init__(self, process_timeout, color = TrackableColor.RED):
+    stop = False
+
+    def __init__(self, process_timeout, color_to_track = TrackableColor.RED):
         self.camera_servos = Servos()
         self.process_timeout = process_timeout
+        self.set_color_to_track(color_to_track)
         
     def set_color_to_track(self, color_to_track):
         if color_to_track == TrackableColor.RED.name:
@@ -77,6 +79,8 @@ class Camera:
         self.image.set(cv2.CAP_PROP_BRIGHTNESS, 20) #set brihtgness -64 - 64  0.0
         self.image.set(cv2.CAP_PROP_CONTRAST, 20)   #set contrast -64 - 64  2.0
 
+        print('\Film capture initied.')
+
     def init_film_saving(self):
         # We need to set resolutions.
         # so, convert them from float to integer.
@@ -97,6 +101,8 @@ class Camera:
                                 VIDEO_WRITER_FOURCC,
                                 10, size)
 
+        print('\nFilm saving initied.')
+
     def finish_filming(self):
         # When everything done, release 
         # the video capture and video 
@@ -116,6 +122,9 @@ class Camera:
         self.init_film_saving()
         
         while time.time() < t_start + self.process_timeout:
+            if self.stop:
+                break
+
             ret, frame = self.image.read()
         
             if not ret:
@@ -129,15 +138,22 @@ class Camera:
         self.finish_filming()
 
     def color_track(self):
+        print('\n Entered color_track method.')
+
         self.camera_servos.init_servos_position()
 
         t_start = time.time()
+
+        print('\nColor track start: ' + str(t_start))
 
         self.init_film_capture()
         self.init_film_saving()
         
         times = 0
         while time.time() < t_start + self.process_timeout:
+            if self.stop:
+                break
+
             ret, frame = self.image.read()
 
             if not ret:
@@ -157,10 +173,15 @@ class Camera:
             mask = cv2.GaussianBlur(mask,(3,3),0)     
             cnts = cv2.findContours(mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2] 
 
-            if len(cnts) > 0:
+            cnts_len = len(cnts)
+            print('\nCountours: ' + cnts_len)
+
+            if cnts_len > 0:
                 cnt = max (cnts, key = cv2.contourArea)
                 (color_x,color_y),color_radius = cv2.minEnclosingCircle(cnt)
                 
+                print('\nColor radius:' + color_radius)
+
                 if color_radius > 10:
                     times =  times +  1
                     # Mark the detected colors
@@ -168,11 +189,11 @@ class Camera:
                     self.camera_servos.xservo_pid.SystemOutput = color_x
                     self.camera_servos.xservo_pid.SetStepSignal(150)
                     self.camera_servos.xservo_pid.SetInertiaTime(0.01, 0.1)
-                    target_valuex = int(CameraServos.INITIAL_X_SERVO_ANGLE + self.camera_servos.xservo_pid.SystemOutput)
+                    target_valuex = int(self.camera_servos.initial_x_servo_angle + self.camera_servos.xservo_pid.SystemOutput)
                     self.camera_servos.yservo_pid.SystemOutput = color_y
                     self.camera_servos.yservo_pid.SetStepSignal(150)
                     self.camera_servos.yservo_pid.SetInertiaTime(0.01, 0.1)
-                    target_valuey = int(CameraServos.INITIAL_Y_SERVO_ANGLE + self.camera_servos.yservo_pid.SystemOutput)
+                    target_valuey = int(self.camera_servos.initial_y_servo_angle + self.camera_servos.yservo_pid.SystemOutput)
                     time.sleep(0.008)
                     
                     if times == 5 :
@@ -180,3 +201,5 @@ class Camera:
                         self.camera_servos.servo_control(target_valuex, target_valuey)
 
         self.finish_filming()
+        
+        return 0

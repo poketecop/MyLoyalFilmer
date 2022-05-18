@@ -6,20 +6,28 @@ from model.robot import PID
 SERVO_PIN = 11  #S2
 SERVO_PIN_B = 9  #S3
 
-INITIAL_X_SERVO_ANGLE = 1500
-INITIAL_Y_SERVO_ANGLE = 1500
+DEFAULT_INITIAL_X_SERVO_ANGLE = 1500
+DEFAULT_INITIAL_Y_SERVO_ANGLE = 1500
 
 class CameraServos:
 
     xservo_pid = None
     yservo_pid = None
 
-    def __init__(self):
+    initial_x_servo_angle = None
+    initial_y_servo_angle = None
+
+    def __init__(self, initial_x_servo_angle = DEFAULT_INITIAL_X_SERVO_ANGLE, initial_y_servo_angle = DEFAULT_INITIAL_Y_SERVO_ANGLE):
         self.xservo_pid = PID.PositionalPID(0.8, 0.1, 0.3)
         self.yservo_pid = PID.PositionalPID(0.4, 0.1, 0.2)
 
+        self.initial_x_servo_angle = initial_x_servo_angle
+        self.initial_y_servo_angle = initial_y_servo_angle
+
     def init_servos_position(self):
-        self.servo_control(INITIAL_X_SERVO_ANGLE, INITIAL_Y_SERVO_ANGLE)
+        self.servo_control(self.initial_x_servo_angle, self.initial_y_servo_angle)
+
+        print('\nServos initial position set.')
 
     # Define a pulse function, used to simulate the pwm value
     # When base pulse is 20ms, the high level part of the pulse is controlled from 0 to 180 degrees in 0.5-2.5ms

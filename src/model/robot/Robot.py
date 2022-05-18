@@ -1,5 +1,6 @@
 #-*- coding:UTF-8 -*-
 
+from enum import Enum
 import threading
 import RPi.GPIO as GPIO
 import time
@@ -12,6 +13,12 @@ DEFAULT_PROCESS_TIMEOUT = 10
 DEFAULT_INITIAL_DELAY = 2
 DEFAULT_TRACKING_LAPS = 1
 
+class Mode(Enum):
+    TRACK_LINE = 1
+    FILM = 2
+    COLOR_TRACK = 3
+    TRACK_LINE_AND_COLOR_TRACK = 4
+
 class Robot:
 
     motors = None
@@ -21,20 +28,33 @@ class Robot:
     initial_delay = None
     tracking_laps = None
     threading = None
+    mode = None
 
     tracking_finished = False
 
-    def __init__(self, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS):
+    def __init__(self, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name):
         self.init_pin_numbering_mode()
         self.process_timeout = process_timeout
         self.initial_delay = initial_delay
         self.tracking_laps = tracking_laps
+        self.mode = mode
 
         self.motors = Motors()
         self.tracking_module = TrackingModule()
         self.camera = Camera(process_timeout = process_timeout)
         
-        
+    def play(self):
+        if self.mode == Mode.TRACK_LINE.name:
+            self.track_line()
+        elif self.mode == Mode.FILM.name:
+            self.camera.film()
+        elif self.mode == Mode.COLOR_TRACK.name:
+            self.camera.color_track()
+        elif self.mode == Mode.TRACK_LINE_AND_COLOR_TRACK.name:
+            self.track_line_and_color_track()
+
+        GPIO.cleanup()
+    
     def init_pin_numbering_mode(self):
         # Set the GPIO port to BCM encoding mode.
         GPIO.setmode(GPIO.BCM)
@@ -42,14 +62,16 @@ class Robot:
         # Ignore warning information
         GPIO.setwarnings(False)
 
-    def track_line_and_track_color(self):
+    def track_line_and_color_track(self):
         thread1 = threading.Thread(target = self.camera.color_track)
         thread1.setDaemon(True)
         thread1.start()
 
-        thread2 = threading.Thread(target = self.track_line)
-        thread2.setDaemon(True)
-        thread2.start()
+        self.track_line()
+        self.camera.stop = True
+
+        while thread1.is_alive():
+            time.sleep(2)
 
     def track_line(self):
         # False means that sensor is over the black line
@@ -59,13 +81,14 @@ class Robot:
         # light is returned to the sensor (True)
 
         # delay 2s	
-        time.sleep(DEFAULT_INITIAL_DELAY)
+        time.sleep(self.initial_delay)
 
         timeout = self.process_timeout   # [seconds]
 
         timeout_start = time.time()
 
         lap = 0
+        mark_lap = False
 
         while time.time() < timeout_start + timeout:
             self.tracking_module.set_sensors_input_value()
@@ -82,10 +105,13 @@ class Robot:
             # 4 tracking pins level status
             # 0 0 0 0
             if self.tracking_module.every_sensor_over_black():
-                lap = lap + 1
-
+                mark_lap = True
+                
                 if lap >= self.tracking_laps:
                     break
+            elif mark_lap:
+                mark_lap = False
+                lap = lap + 1
             
             # Original conditions
             
@@ -118,6 +144,4 @@ class Robot:
                 
             # When the every sensor is NOT over the black line, the car keeps the previous running state.
         
-        self.motors.soft_stop()            
-
-        GPIO.cleanup()
+        self.motors.soft_stop()
