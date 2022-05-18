@@ -1,5 +1,6 @@
 #-*- coding:UTF-8 -*-
 
+import threading
 import RPi.GPIO as GPIO
 import time
 from model.robot.Camera import Camera
@@ -8,6 +9,8 @@ from model.robot.Motors import Motors
 from model.robot.TrackingModule import TrackingModule
 
 DEFAULT_PROCESS_TIMEOUT = 10
+DEFAULT_INITIAL_DELAY = 2
+DEFAULT_TRACKING_LAPS = 1
 
 class Robot:
 
@@ -15,11 +18,18 @@ class Robot:
     camera = None
     tracking_module = None
     process_timeout = None
+    initial_delay = None
+    tracking_laps = None
+    threading = None
 
-    def __init__(self, process_timeout = DEFAULT_PROCESS_TIMEOUT):
+    tracking_finished = False
+
+    def __init__(self, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS):
         self.init_pin_numbering_mode()
         self.process_timeout = process_timeout
-        
+        self.initial_delay = initial_delay
+        self.tracking_laps = tracking_laps
+
         self.motors = Motors()
         self.tracking_module = TrackingModule()
         self.camera = Camera(process_timeout = process_timeout)
@@ -32,6 +42,15 @@ class Robot:
         # Ignore warning information
         GPIO.setwarnings(False)
 
+    def track_line_and_track_color(self):
+        thread1 = threading.Thread(target = self.camera.color_track)
+        thread1.setDaemon(True)
+        thread1.start()
+
+        thread2 = threading.Thread(target = self.track_line)
+        thread2.setDaemon(True)
+        thread2.start()
+
     def track_line(self):
         # False means that sensor is over the black line
         # If the the sensor is over the black line, 
@@ -40,16 +59,18 @@ class Robot:
         # light is returned to the sensor (True)
 
         # delay 2s	
-        time.sleep(2)
+        time.sleep(DEFAULT_INITIAL_DELAY)
 
         timeout = self.process_timeout   # [seconds]
 
         timeout_start = time.time()
 
+        lap = 0
+
         while time.time() < timeout_start + timeout:
             self.tracking_module.set_sensors_input_value()
 
-            self.motors.run()
+            self.motors.run_with_lower_duty_cycle()
 
             if not self.tracking_module.every_sensor_over_black():
                 break
@@ -61,7 +82,10 @@ class Robot:
             # 4 tracking pins level status
             # 0 0 0 0
             if self.tracking_module.every_sensor_over_black():
-                break
+                lap = lap + 1
+
+                if lap >= self.tracking_laps:
+                    break
             
             # Original conditions
             
@@ -94,5 +118,6 @@ class Robot:
                 
             # When the every sensor is NOT over the black line, the car keeps the previous running state.
         
-        self.motors.soft_stop()
+        self.motors.soft_stop()            
+
         GPIO.cleanup()

@@ -5,7 +5,8 @@ import cv2
 import time
 import numpy as np
 
-from model.robot.CameraServos import CameraServos
+import CameraServos
+from model.robot.CameraServos import CameraServos as Servos
 
 from datetime import datetime as dt
 
@@ -43,7 +44,7 @@ class Camera:
     process_timeout = None
 
     def __init__(self, process_timeout, color = TrackableColor.RED):
-        self.camera_servos = CameraServos()
+        self.camera_servos = Servos()
         self.process_timeout = process_timeout
         
     def set_color_to_track(self, color_to_track):
@@ -167,15 +168,15 @@ class Camera:
                     self.camera_servos.xservo_pid.SystemOutput = color_x
                     self.camera_servos.xservo_pid.SetStepSignal(150)
                     self.camera_servos.xservo_pid.SetInertiaTime(0.01, 0.1)
-                    target_valuex = int(1500+self.camera_servos.xservo_pid.SystemOutput)
+                    target_valuex = int(CameraServos.INITIAL_X_SERVO_ANGLE + self.camera_servos.xservo_pid.SystemOutput)
                     self.camera_servos.yservo_pid.SystemOutput = color_y
                     self.camera_servos.yservo_pid.SetStepSignal(150)
                     self.camera_servos.yservo_pid.SetInertiaTime(0.01, 0.1)
-                    target_valuey = int(1500+self.camera_servos.yservo_pid.SystemOutput)
+                    target_valuey = int(CameraServos.INITIAL_Y_SERVO_ANGLE + self.camera_servos.yservo_pid.SystemOutput)
                     time.sleep(0.008)
                     
                     if times == 5 :
                         times = 0 
-                        self.camera_servos.servo_control(target_valuex,target_valuey)
+                        self.camera_servos.servo_control(target_valuex, target_valuey)
 
         self.finish_filming()

@@ -29,6 +29,9 @@ def main(argv) -> int:
     
     if 'processtimeout' in parameter_list:
         robot.process_timeout = int(parameter_list['processtimeout'])
+    
+    if 'initialdelay' in parameter_list:
+        robot.initial_delay = int(parameter_list['initialdelay'])
 
     if 'colortotrack' in parameter_list:
         robot.camera.set_color_to_track(parameter_list['colortotrack'])

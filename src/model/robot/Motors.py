@@ -54,6 +54,17 @@ class Motors:
         self.pwm_ENA.ChangeDutyCycle(left_duty_cycle)
         self.pwm_ENB.ChangeDutyCycle(right_duty_cycle)
 
+    def run_with_lower_duty_cycle(self):
+        if DEFAULT_DESIRED_DUTY_CYCLE < self.desired_left_duty_cycle:
+            left_duty_cycle = DEFAULT_DESIRED_DUTY_CYCLE
+            right_duty_cycle = DEFAULT_DESIRED_DUTY_CYCLE
+        else:
+            left_duty_cycle = self.desired_left_duty_cycle
+            right_duty_cycle = self.desired_right_duty_cycle
+
+        self.run_with_duty_cycle(left_duty_cycle = left_duty_cycle, 
+            right_duty_cycle = right_duty_cycle)
+
     def run(self):
         self.run_with_duty_cycle(left_duty_cycle = self.desired_left_duty_cycle, 
             right_duty_cycle = self.desired_right_duty_cycle)
