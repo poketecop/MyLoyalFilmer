@@ -33,6 +33,10 @@ ORANGE_COLOR_UPPER = np.array([25, 255, 255])
 
 VIDEO_WRITER_FOURCC = cv2.VideoWriter.fourcc('M', 'J', 'P', 'G')
 
+SERVOS_MOVEMENT_TRACKING_DELAY = 0.008
+SERVOS_MOVEMENT_TIMES_DELAY = 5
+MIN_COLOR_RADIUS_TO_TRACK = 10
+
 class Camera:
 
     color_lower = None
@@ -137,6 +141,38 @@ class Camera:
 
         self.finish_filming()
 
+    def get_color_countours(self):
+        frame = cv2.resize(frame, (300, 300))
+        # Not used
+        # frame_ = cv2.GaussianBlur(frame,(5,5),0) 
+        hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv,self.color_lower,self.color_upper)  
+        mask = cv2.erode(mask,None,iterations=2)
+        mask = cv2.dilate(mask,None,iterations=2)
+        mask = cv2.GaussianBlur(mask,(3,3),0)     
+        cnts = cv2.findContours(mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2]
+
+        return cnts
+
+    def get_target_value_and_prepare_servos(self, color_x, color_y):
+        self.camera_servos.xservo_pid.SystemOutput = color_x
+        self.camera_servos.xservo_pid.SetStepSignal(150)
+        self.camera_servos.xservo_pid.SetInertiaTime(0.01, 0.1)
+        target_valuex = int(self.camera_servos.initial_x_servo_angle + self.camera_servos.xservo_pid.SystemOutput)
+        
+        self.camera_servos.yservo_pid.SystemOutput = color_y
+        self.camera_servos.yservo_pid.SetStepSignal(150)
+        self.camera_servos.yservo_pid.SetInertiaTime(0.01, 0.1)
+        target_valuey = int(self.camera_servos.initial_y_servo_angle + self.camera_servos.yservo_pid.SystemOutput)
+
+        return target_valuex, target_valuey
+
+    def get_colors_position_and_color_radius(self, cnts):
+        cnt = max (cnts, key = cv2.contourArea)
+        (color_x,color_y), color_radius = cv2.minEnclosingCircle(cnt)
+
+        return (color_x,color_y), color_radius
+
     def color_track(self):
         print('\n Entered color_track method.')
 
@@ -164,39 +200,30 @@ class Camera:
             # file 'filename.avi'
             self.result.write(frame)
 
-            frame = cv2.resize(frame, (300, 300))
-            frame_ = cv2.GaussianBlur(frame,(5,5),0) 
-            hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
-            mask = cv2.inRange(hsv,self.color_lower,self.color_upper)  
-            mask = cv2.erode(mask,None,iterations=2)
-            mask = cv2.dilate(mask,None,iterations=2)
-            mask = cv2.GaussianBlur(mask,(3,3),0)     
-            cnts = cv2.findContours(mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2] 
+            cnts = self.get_color_countours()
 
             cnts_len = len(cnts)
             print('\nCountours: ' + cnts_len)
 
             if cnts_len > 0:
-                cnt = max (cnts, key = cv2.contourArea)
-                (color_x,color_y),color_radius = cv2.minEnclosingCircle(cnt)
+                (color_x,color_y), color_radius = self.get_colors_position_and_color_radius(cnts)
                 
                 print('\nColor radius:' + color_radius)
 
-                if color_radius > 10:
+                if color_radius > MIN_COLOR_RADIUS_TO_TRACK:
                     times =  times +  1
                     # Mark the detected colors
                     # Proportion-Integration-Differentiation
-                    self.camera_servos.xservo_pid.SystemOutput = color_x
-                    self.camera_servos.xservo_pid.SetStepSignal(150)
-                    self.camera_servos.xservo_pid.SetInertiaTime(0.01, 0.1)
-                    target_valuex = int(self.camera_servos.initial_x_servo_angle + self.camera_servos.xservo_pid.SystemOutput)
-                    self.camera_servos.yservo_pid.SystemOutput = color_y
-                    self.camera_servos.yservo_pid.SetStepSignal(150)
-                    self.camera_servos.yservo_pid.SetInertiaTime(0.01, 0.1)
-                    target_valuey = int(self.camera_servos.initial_y_servo_angle + self.camera_servos.yservo_pid.SystemOutput)
-                    time.sleep(0.008)
+
+                    if times < SERVOS_MOVEMENT_TIMES_DELAY:
+                        time.sleep(SERVOS_MOVEMENT_TRACKING_DELAY)
+                        continue
+
+                    target_valuex, target_valuey = self.get_target_value_and_prepare_servos(color_x, color_y)
                     
-                    if times == 5 :
+                    time.sleep(SERVOS_MOVEMENT_TRACKING_DELAY)
+                    
+                    if times == SERVOS_MOVEMENT_TIMES_DELAY:
                         times = 0 
                         self.camera_servos.servo_control(target_valuex, target_valuey)
 
