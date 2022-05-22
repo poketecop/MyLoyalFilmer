@@ -18,6 +18,8 @@ class Mode(Enum):
     FILM = 2
     COLOR_TRACK = 3
     TRACK_LINE_AND_COLOR_TRACK = 4
+    CALIBRATE_CAMERA_SERVOS = 5
+    TEST_COLOR_TRACK = 6
 
 class Robot:
 
@@ -53,6 +55,11 @@ class Robot:
                 self.color_track()
             elif self.mode == Mode.TRACK_LINE_AND_COLOR_TRACK.name:
                 self.track_line_and_color_track()
+            elif self.mode == Mode.CALIBRATE_CAMERA_SERVOS.name:
+                self.camera.camera_servos.calibrate_servos()
+            elif self.mode == Mode.TEST_COLOR_TRACK.name:
+                self.test_color_track()
+            
         except IOError as error:
             print(error)
         finally:
@@ -162,7 +169,7 @@ class Robot:
         self.camera.init_film_saving()
         
         times = 0
-        while time.time() < t_start + self.camera.process_timeout:
+        while time.time() < t_start + self.process_timeout:
             if self.camera.stop:
                 break
 
@@ -176,15 +183,15 @@ class Robot:
             # file 'filename.avi'
             self.camera.result.write(frame)
 
-            cnts = self.camera.get_color_countours()
+            cnts = self.camera.get_color_countours(frame)
 
             cnts_len = len(cnts)
-            print('\nCountours: ' + cnts_len)
+            print('\nCountours: ' + str(cnts_len))
 
             if cnts_len > 0:
                 (color_x,color_y), color_radius = self.camera.get_colors_position_and_color_radius(cnts)
                 
-                print('\nColor radius:' + color_radius)
+                print('\nColor radius:' + str(color_radius))
 
                 if color_radius > CameraModule.MIN_COLOR_RADIUS_TO_TRACK:
                     times =  times +  1
@@ -200,9 +207,64 @@ class Robot:
                     time.sleep(CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY)
                     
                     if times == CameraModule.SERVOS_MOVEMENT_TIMES_DELAY:
-                        times = 0 
+                        times = 0
+                        print('\n X target angle: ' + str(target_valuex) + '\n Y traget angle:' + str(target_valuey))
                         self.camera.camera_servos.servo_control(target_valuex, target_valuey)
 
         self.camera.finish_filming()
         
         return 0
+
+    def test_color_track(self):
+        print('\n Entered color_track method.')
+
+        self.camera.init_film_capture()
+        self.camera.init_film_display()
+        
+        i = 0
+
+        while i < 3:
+            ret, frame = self.camera.image.read()
+
+            if not ret:
+                # Break the loop
+                break
+
+            cnts = self.camera.get_color_countours(frame)
+
+            cnts_len = len(cnts)
+            print('\nCountours: ' + str(cnts_len))
+
+            if cnts_len > 0:
+                (color_x,color_y), color_radius = self.camera.get_colors_position_and_color_radius(cnts)                
+                print('\nColor radius:' + str(color_radius))
+
+                if color_radius > CameraModule.MIN_COLOR_RADIUS_TO_TRACK:
+                    # Mark the detected colors
+                    self.camera.mark_the_detected_colors(frame, color_x, color_y, color_radius)
+            
+            self.camera.display_frame(frame)
+
+            i = self.chech_test_position(color_x, color_y, i)
+           
+        self.camera.finish_film_capture()
+
+    def chech_test_position(self, color_x, color_y, i):
+        print('\n¿Are you in the desired' + str(i) + ' test position? Y/N:N')
+
+        in_position = input()
+
+        if not in_position or in_position.upper == 'N':
+            print('\nMove to the desired' + str(i) + ' test position.')
+            return i
+        
+        print('\nWrite down X and Y value: X = ' + str(color_x) + ' Y = ' + str(color_y))
+
+        return i + 1
+
+        
+
+
+
+                    
+                    

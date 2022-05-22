@@ -9,6 +9,9 @@ from model.robot.CameraServos import CameraServos as Servos
 
 from datetime import datetime as dt
 
+import ipywidgets.widgets as widgets
+from IPython.display import display
+
 class TrackableColor(Enum):
     RED = 1
     GREEN = 2
@@ -45,10 +48,11 @@ class Camera:
     result = None
     image = None
     process_timeout = None
+    image_widget = None
 
     stop = False
 
-    def __init__(self, process_timeout, color_to_track = TrackableColor.RED):
+    def __init__(self, process_timeout, color_to_track = TrackableColor.RED.name):
         self.camera_servos = Servos()
         self.process_timeout = process_timeout
         self.set_color_to_track(color_to_track)
@@ -70,8 +74,11 @@ class Camera:
             self.color_lower = ORANGE_COLOR_LOWER
             self.color_upper = ORANGE_COLOR_UPPER
     
+    def display_frame(self, frame):
+        self.image_widget.value = self.bgr8_to_jpeg(frame)
+
     #bgr8 to jpeg format
-    def bgr8_to_jpeg(value, quality=75):
+    def bgr8_to_jpeg(self, value, quality=75):
         return bytes(cv2.imencode('.jpg', value)[1])
 
     def init_film_capture(self):
@@ -87,13 +94,23 @@ class Camera:
         self.image.set(cv2.CAP_PROP_BRIGHTNESS, 20) #set brihtgness -64 - 64  0.0
         self.image.set(cv2.CAP_PROP_CONTRAST, 20)   #set contrast -64 - 64  2.0
 
-    def init_film_saving(self):
+    def get_frame_size(self):
         # We need to set resolutions.
         # so, convert them from float to integer.
         frame_width = int(self.image.get(3))
         frame_height = int(self.image.get(4))
         
         size = (frame_width, frame_height)
+
+        return size
+
+    def init_film_saving(self):
+        # We need to set resolutions.
+        # so, convert them from float to integer.
+        frame_width = int(self.image.get(3))
+        frame_height = int(self.image.get(4))
+        
+        size = self.get_frame_size()
         
         # Below VideoWriter object will create
         # a frame of above defined The output 
@@ -110,13 +127,21 @@ class Camera:
         print('\nFilm saving initied.')
 
     def finish_filming(self):
+        self.finish_film_capture()
+        self.finish_film_saving()
+
+    def finish_film_capture(self):
         # When everything done, release 
-        # the video capture and video 
-        # write objects
+        # the video capture
         self.image.release()
+        print("The video capturing was released")
+    
+    def finish_film_saving(self):
+        # When everything done, release 
+        # the video writing
         self.result.release()
-        
         print("The video was successfully saved")
+    
 
     def film(self):
         t_start = time.time()
@@ -140,8 +165,8 @@ class Camera:
 
         self.finish_filming()
 
-    def get_color_countours(self):
-        frame = cv2.resize(frame, (300, 300))
+    def get_color_countours(self, frame):
+        # frame = cv2.resize(frame, (300, 300))
         # Not used
         # frame_ = cv2.GaussianBlur(frame,(5,5),0) 
         hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
@@ -152,6 +177,14 @@ class Camera:
         cnts = cv2.findContours(mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2]
 
         return cnts
+
+    def init_film_display(self):
+        (frame_width, frame_height) = self.get_frame_size()
+        self.image_widget = widgets.Image(format='jpeg', width=frame_width, height=frame_height)
+        display(self.image_widget)
+
+    def mark_the_detected_colors(self, frame, color_x, color_y, color_radius):
+        cv2.circle(frame,(int(color_x),int(color_y)),int(color_radius),(255,0,255),2)
 
     def get_target_value_and_prepare_servos(self, color_x, color_y):
         self.camera_servos.xservo_pid.SystemOutput = color_x

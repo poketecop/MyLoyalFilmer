@@ -1,2 +1,4 @@
 #RPi.GPIO==0.7.1
 opencv-python==4.5.5.64
+ipywidgets==7.7.0
+ipython==7.33.0
