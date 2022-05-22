@@ -76,14 +76,16 @@ class Camera:
 
     def init_film_capture(self):
         self.image = cv2.VideoCapture(-1)
+        print('\Film capture initied.')
+        if not self.image.isOpened():
+            raise IOError("Cannot open webcam")
+
         self.image.set(3, 640)
         self.image.set(4, 480)
         self.image.set(5, 120)   #set frame
         self.image.set(cv2.CAP_PROP_FOURCC, VIDEO_WRITER_FOURCC)
         self.image.set(cv2.CAP_PROP_BRIGHTNESS, 20) #set brihtgness -64 - 64  0.0
         self.image.set(cv2.CAP_PROP_CONTRAST, 20)   #set contrast -64 - 64  2.0
-
-        print('\Film capture initied.')
 
     def init_film_saving(self):
         # We need to set resolutions.
@@ -113,9 +115,6 @@ class Camera:
         # write objects
         self.image.release()
         self.result.release()
-            
-        # Closes all the frames
-        cv2.destroyAllWindows()
         
         print("The video was successfully saved")
 
@@ -173,60 +172,4 @@ class Camera:
 
         return (color_x,color_y), color_radius
 
-    def color_track(self):
-        print('\n Entered color_track method.')
-
-        self.camera_servos.init_servos_position()
-
-        t_start = time.time()
-
-        print('\nColor track start: ' + str(t_start))
-
-        self.init_film_capture()
-        self.init_film_saving()
-        
-        times = 0
-        while time.time() < t_start + self.process_timeout:
-            if self.stop:
-                break
-
-            ret, frame = self.image.read()
-
-            if not ret:
-                # Break the loop
-                break
-
-            # Write the frame into the
-            # file 'filename.avi'
-            self.result.write(frame)
-
-            cnts = self.get_color_countours()
-
-            cnts_len = len(cnts)
-            print('\nCountours: ' + cnts_len)
-
-            if cnts_len > 0:
-                (color_x,color_y), color_radius = self.get_colors_position_and_color_radius(cnts)
-                
-                print('\nColor radius:' + color_radius)
-
-                if color_radius > MIN_COLOR_RADIUS_TO_TRACK:
-                    times =  times +  1
-                    # Mark the detected colors
-                    # Proportion-Integration-Differentiation
-
-                    if times < SERVOS_MOVEMENT_TIMES_DELAY:
-                        time.sleep(SERVOS_MOVEMENT_TRACKING_DELAY)
-                        continue
-
-                    target_valuex, target_valuey = self.get_target_value_and_prepare_servos(color_x, color_y)
-                    
-                    time.sleep(SERVOS_MOVEMENT_TRACKING_DELAY)
-                    
-                    if times == SERVOS_MOVEMENT_TIMES_DELAY:
-                        times = 0 
-                        self.camera_servos.servo_control(target_valuex, target_valuey)
-
-        self.finish_filming()
-        
-        return 0
+    

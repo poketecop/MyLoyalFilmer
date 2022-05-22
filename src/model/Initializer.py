@@ -37,6 +37,8 @@ class Initializer:
                         stderr = subprocess.PIPE).communicate(input=SYSTEM_PASSWORD)
             if stderr:
                 print(stderr.decode('utf-8'))
+            else:
+                print('\nProceso bluetooth matado. stdout: ' + (stdout.decode('utf-8') if stdout else ''))
         
         matching = re.search(PS_MJPG_STREAMER_REGEX, ps_stdout_str)
 
@@ -48,3 +50,5 @@ class Initializer:
                             stderr = subprocess.PIPE).communicate()
             if stderr:
                 print(stderr.decode('utf-8'))
+            else:
+                print('\nProceso mjpg streamer matado. stdout: ' + (stdout.decode('utf-8') if stdout else ''))

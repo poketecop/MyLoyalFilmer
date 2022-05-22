@@ -4,7 +4,7 @@ from enum import Enum
 import threading
 import RPi.GPIO as GPIO
 import time
-from model.robot.Camera import Camera
+from model.robot import CameraModule
 
 from model.robot.Motors import Motors
 from model.robot.TrackingModule import TrackingModule
@@ -41,19 +41,22 @@ class Robot:
 
         self.motors = Motors()
         self.tracking_module = TrackingModule()
-        self.camera = Camera(process_timeout = process_timeout)
+        self.camera = CameraModule.Camera(process_timeout = process_timeout)
         
     def play(self):
-        if self.mode == Mode.TRACK_LINE.name:
-            self.track_line()
-        elif self.mode == Mode.FILM.name:
-            self.camera.film()
-        elif self.mode == Mode.COLOR_TRACK.name:
-            self.camera.color_track()
-        elif self.mode == Mode.TRACK_LINE_AND_COLOR_TRACK.name:
-            self.track_line_and_color_track()
-
-        GPIO.cleanup()
+        try:
+            if self.mode == Mode.TRACK_LINE.name:
+                self.track_line()
+            elif self.mode == Mode.FILM.name:
+                self.camera.film()
+            elif self.mode == Mode.COLOR_TRACK.name:
+                self.color_track()
+            elif self.mode == Mode.TRACK_LINE_AND_COLOR_TRACK.name:
+                self.track_line_and_color_track()
+        except IOError as error:
+            print(error)
+        finally:
+            GPIO.cleanup()
     
     def init_pin_numbering_mode(self):
         # Set the GPIO port to BCM encoding mode.
@@ -63,7 +66,7 @@ class Robot:
         GPIO.setwarnings(False)
 
     def track_line_and_color_track(self):
-        thread1 = threading.Thread(target = self.camera.color_track)
+        thread1 = threading.Thread(target = self.color_track)
         thread1.setDaemon(True)
         thread1.start()
 
@@ -145,3 +148,61 @@ class Robot:
             # When the every sensor is NOT over the black line, the car keeps the previous running state.
         
         self.motors.soft_stop()
+
+    def color_track(self):
+        print('\n Entered color_track method.')
+
+        self.camera.camera_servos.init_servos_position()
+
+        t_start = time.time()
+
+        print('\nColor track start: ' + str(t_start))
+
+        self.camera.init_film_capture()
+        self.camera.init_film_saving()
+        
+        times = 0
+        while time.time() < t_start + self.camera.process_timeout:
+            if self.camera.stop:
+                break
+
+            ret, frame = self.camera.image.read()
+
+            if not ret:
+                # Break the loop
+                break
+
+            # Write the frame into the
+            # file 'filename.avi'
+            self.camera.result.write(frame)
+
+            cnts = self.camera.get_color_countours()
+
+            cnts_len = len(cnts)
+            print('\nCountours: ' + cnts_len)
+
+            if cnts_len > 0:
+                (color_x,color_y), color_radius = self.camera.get_colors_position_and_color_radius(cnts)
+                
+                print('\nColor radius:' + color_radius)
+
+                if color_radius > CameraModule.MIN_COLOR_RADIUS_TO_TRACK:
+                    times =  times +  1
+                    # Mark the detected colors
+                    # Proportion-Integration-Differentiation
+
+                    if times < CameraModule.SERVOS_MOVEMENT_TIMES_DELAY:
+                        time.sleep(CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY)
+                        continue
+
+                    target_valuex, target_valuey = self.camera.get_target_value_and_prepare_servos(color_x, color_y)
+                    
+                    time.sleep(CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY)
+                    
+                    if times == CameraModule.SERVOS_MOVEMENT_TIMES_DELAY:
+                        times = 0 
+                        self.camera.camera_servos.servo_control(target_valuex, target_valuey)
+
+        self.camera.finish_filming()
+        
+        return 0
