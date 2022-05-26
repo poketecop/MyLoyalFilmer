@@ -106,11 +106,9 @@ class Camera:
 
     def init_film_saving(self):
         # We need to set resolutions.
-        # so, convert them from float to integer.
-        frame_width = int(self.image.get(3))
-        frame_height = int(self.image.get(4))
-        
         size = self.get_frame_size()
+
+        print("\nFilm saving resolution: " + str(size[0]) + " X " + str(size[1]))
         
         # Below VideoWriter object will create
         # a frame of above defined The output 
@@ -180,6 +178,9 @@ class Camera:
 
     def init_film_display(self):
         (frame_width, frame_height) = self.get_frame_size()
+
+        print("\nFilm display resolution: " + str(frame_width) + " X " + str(frame_height))
+
         self.image_widget = widgets.Image(format='jpeg', width=frame_width, height=frame_height)
         display(self.image_widget)
 

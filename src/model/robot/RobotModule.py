@@ -220,6 +220,7 @@ class Robot:
 
         self.camera.init_film_capture()
         self.camera.init_film_display()
+        self.camera.init_film_saving()
         
         i = 0
 
@@ -229,6 +230,10 @@ class Robot:
             if not ret:
                 # Break the loop
                 break
+
+            # Write the frame into the
+            # file 'filename.avi'
+            self.camera.result.write(frame)
 
             cnts = self.camera.get_color_countours(frame)
 
@@ -247,7 +252,7 @@ class Robot:
 
             i = self.chech_test_position(color_x, color_y, i)
            
-        self.camera.finish_film_capture()
+        self.camera.finish_filming()
 
     def chech_test_position(self, color_x, color_y, i):
         print('\n¿Are you in the desired' + str(i) + ' test position? Y/N:N')
