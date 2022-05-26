@@ -19,6 +19,7 @@ class Mode(Enum):
     TRACK_LINE_AND_COLOR_TRACK = 4
     CALIBRATE_CAMERA_SERVOS = 5
     TEST_COLOR_TRACK = 6
+    TEST_CAMERA_SERVO_CONTROL = 7
 
 class Robot:
 
@@ -58,6 +59,8 @@ class Robot:
                 self.camera.camera_servos.calibrate_servos()
             elif self.mode == Mode.TEST_COLOR_TRACK.name:
                 self.test_color_track()
+            elif self.mode == Mode.TEST_CAMERA_SERVO_CONTROL.name:
+                self.camera.camera_servos.test_servo_control()
             
         except IOError as error:
             print(error)
@@ -198,12 +201,12 @@ class Robot:
                         # Can't use sleep if not necessary to keep capturing video
                         # So we will check intervals of SERVOS_MOVEMENT_TRACKING_DELAY until SERVOS_MOVEMENT_TIMES_DELAY times.
                         if not delay_end_time:
-                            delay_end_time = time.perf_counter + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
+                            delay_end_time = time.perf_counter() + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
                             # Calc for an interval.
                             continue
                         
                         # Check for an interval.
-                        if time.perf_counter < delay_end_time:
+                        if time.perf_counter() < delay_end_time:
                             continue
 
                         times =  times +  1
@@ -213,9 +216,9 @@ class Robot:
                     target_valuex, target_valuey = self.camera.get_target_value_and_prepare_servos(color_x, color_y)
                     
                     if not delay_end_time:
-                        delay_end_time = time.perf_counter + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
+                        delay_end_time = time.perf_counter() + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
                         continue
-                    if time.perf_counter < delay_end_time:
+                    if time.perf_counter() < delay_end_time:
                         continue
                     delay_end_time = None
                     

@@ -157,5 +157,31 @@ class CameraServos:
         print("\nMax x:" + str(max_x))
         print("\nMax y:" + str(max_y))        
         
+    def servo_pulse_degrees(self, myangle):
+        # Convert the Angle to 500-2480 pulse width
+        angle = (myangle * 11) + 500
+        self.servo_pulse(SERVO_PIN, angle)     
+
+   
+    def test_servo_control(self):
+        self.set_servo_to_output_mode()
+        
+        self.servo_pulse_degrees(90)
+
+        time.sleep(2)
+
+        pos = 0
+        while pos < 180:
+            self.servo_pulse_degrees(pos)
+            pos = pos + 1
+            time.sleep(0.1)
+
+        time.sleep(2)
+        pos = 180   
+        while pos > 0:
+            self.servo_pulse_degrees(pos)
+            pos = pos - 1
+            time.sleep(0.1)
+    
 
             
