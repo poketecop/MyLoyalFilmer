@@ -5,7 +5,6 @@ import threading
 import RPi.GPIO as GPIO
 import time
 from model.robot import CameraModule
-
 from model.robot.Motors import Motors
 from model.robot.TrackingModule import TrackingModule
 
@@ -169,6 +168,7 @@ class Robot:
         self.camera.init_film_saving()
         
         times = 0
+        delay_end_time = None
         while time.time() < t_start + self.process_timeout:
             if self.camera.stop:
                 break
@@ -194,22 +194,33 @@ class Robot:
                 print('\nColor radius:' + str(color_radius))
 
                 if color_radius > CameraModule.MIN_COLOR_RADIUS_TO_TRACK:
-                    times =  times +  1
-                    # Mark the detected colors
-                    # Proportion-Integration-Differentiation
-
                     if times < CameraModule.SERVOS_MOVEMENT_TIMES_DELAY:
-                        time.sleep(CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY)
+                        # Can't use sleep if not necessary to keep capturing video
+                        # So we will check intervals of SERVOS_MOVEMENT_TRACKING_DELAY until SERVOS_MOVEMENT_TIMES_DELAY times.
+                        if not delay_end_time:
+                            delay_end_time = time.perf_counter + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
+                            # Calc for an interval.
+                            continue
+                        
+                        # Check for an interval.
+                        if time.perf_counter < delay_end_time:
+                            continue
+
+                        times =  times +  1
+                        delay_end_time = None
                         continue
 
                     target_valuex, target_valuey = self.camera.get_target_value_and_prepare_servos(color_x, color_y)
                     
-                    time.sleep(CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY)
+                    if not delay_end_time:
+                        delay_end_time = time.perf_counter + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
+                        continue
+                    if time.perf_counter < delay_end_time:
+                        continue
+                    delay_end_time = None
                     
-                    if times == CameraModule.SERVOS_MOVEMENT_TIMES_DELAY:
-                        times = 0
-                        print('\n X target angle: ' + str(target_valuex) + '\n Y traget angle:' + str(target_valuey))
-                        self.camera.camera_servos.servo_control(target_valuex, target_valuey)
+                    print('\n X target angle: ' + str(target_valuex) + '\n Y target angle:' + str(target_valuey))
+                    self.camera.camera_servos.servo_control(target_valuex, target_valuey)
 
         self.camera.finish_filming()
         

@@ -8,6 +8,7 @@ OpenCV, Raspberry PI, Yahboom G1 Tank loyal filmer project.
 ```
 
 ## Color track test
+
 Camera image is mirrored.
 
 center: Write down X and Y value: X = 292.5 Y = 401.0

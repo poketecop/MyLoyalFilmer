@@ -1,5 +1,4 @@
 #-*- coding:UTF-8 -*-
-from this import d
 import RPi.GPIO as GPIO
 import time
 from model.robot import PID
@@ -7,8 +6,8 @@ from model.robot import PID
 SERVO_PIN = 11  #S2
 SERVO_PIN_B = 9  #S3
 
-DEFAULT_INITIAL_X_SERVO_ANGLE = 1500
-DEFAULT_INITIAL_Y_SERVO_ANGLE = 1500
+DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE = 1500
+DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE = 1500
 
 class CameraServos:
 
@@ -18,7 +17,11 @@ class CameraServos:
     initial_x_servo_angle = None
     initial_y_servo_angle = None
 
-    def __init__(self, initial_x_servo_angle = DEFAULT_INITIAL_X_SERVO_ANGLE, initial_y_servo_angle = DEFAULT_INITIAL_Y_SERVO_ANGLE):
+    current_x_servo_angle = None
+    current_y_servo_angle = None
+
+
+    def __init__(self, initial_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, initial_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE):
         self.xservo_pid = PID.PositionalPID(0.8, 0.1, 0.3)
         self.yservo_pid = PID.PositionalPID(0.4, 0.1, 0.2)
 
@@ -67,6 +70,9 @@ class CameraServos:
             y_angle = 500
         elif y_angle > 2500:
             y_angle = 2500
+
+        self.current_x_servo_angle = x_angle
+        self.current_y_servo_angle = y_angle
 
         self.servo_pulse_both(x_angle, y_angle)
         
@@ -148,7 +154,7 @@ class CameraServos:
         print("\nMin x:" + str(min_x))
         print("\nMin y:" + str(min_y))
         print("\nMax x:" + str(max_x))
-        print("\nMax y:" + str(max_y))
+        print("\nMax y:" + str(max_y))        
         
 
             

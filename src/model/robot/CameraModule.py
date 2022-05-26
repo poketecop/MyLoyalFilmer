@@ -5,8 +5,7 @@ import cv2
 import time
 import numpy as np
 
-from model.robot.CameraServos import CameraServos as Servos
-
+from model.robot import CameraServosModule
 from datetime import datetime as dt
 
 import ipywidgets.widgets as widgets
@@ -37,7 +36,7 @@ ORANGE_COLOR_UPPER = np.array([25, 255, 255])
 VIDEO_WRITER_FOURCC = cv2.VideoWriter.fourcc('M', 'J', 'P', 'G')
 
 SERVOS_MOVEMENT_TRACKING_DELAY = 0.008
-SERVOS_MOVEMENT_TIMES_DELAY = 5
+SERVOS_MOVEMENT_TIMES_DELAY = 4
 MIN_COLOR_RADIUS_TO_TRACK = 10
 
 class Camera:
@@ -53,7 +52,7 @@ class Camera:
     stop = False
 
     def __init__(self, process_timeout, color_to_track = TrackableColor.RED.name):
-        self.camera_servos = Servos()
+        self.camera_servos = CameraServosModule.CameraServos()
         self.process_timeout = process_timeout
         self.set_color_to_track(color_to_track)
         
@@ -191,12 +190,12 @@ class Camera:
         self.camera_servos.xservo_pid.SystemOutput = color_x
         self.camera_servos.xservo_pid.SetStepSignal(150)
         self.camera_servos.xservo_pid.SetInertiaTime(0.01, 0.1)
-        target_valuex = int(self.camera_servos.initial_x_servo_angle + self.camera_servos.xservo_pid.SystemOutput)
+        target_valuex = int(self.camera_servos.current_x_servo_angle + self.camera_servos.xservo_pid.SystemOutput)
         
         self.camera_servos.yservo_pid.SystemOutput = color_y
         self.camera_servos.yservo_pid.SetStepSignal(150)
         self.camera_servos.yservo_pid.SetInertiaTime(0.01, 0.1)
-        target_valuey = int(self.camera_servos.initial_y_servo_angle + self.camera_servos.yservo_pid.SystemOutput)
+        target_valuey = int(self.camera_servos.current_y_servo_angle + self.camera_servos.yservo_pid.SystemOutput)
 
         return target_valuex, target_valuey
 
