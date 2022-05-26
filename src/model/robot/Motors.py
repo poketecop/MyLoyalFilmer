@@ -2,7 +2,7 @@
 import RPi.GPIO as GPIO
 import time
 
-from model.utils.Util import percentage
+from model.utils.RobotUtil import percentage
 
 # Definition of  motor pins
 IN1 = 20

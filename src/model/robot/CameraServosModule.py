@@ -2,6 +2,7 @@
 import RPi.GPIO as GPIO
 import time
 from model.robot import PID
+from model.utils.RobotUtil import sleep
 
 SERVO_PIN = 11  #S2
 SERVO_PIN_B = 9  #S3
@@ -48,9 +49,9 @@ class CameraServos:
     def servo_pulse(self, pin, angle):
         pulsewidth = angle
         GPIO.output(pin, GPIO.HIGH)
-        time.sleep(pulsewidth/1000000.0)
+        sleep(pulsewidth/1000000.0)
         GPIO.output(pin, GPIO.LOW)
-        time.sleep(20.0/1000-pulsewidth/1000000.0)
+        sleep(20.0/1000-pulsewidth/1000000.0)
     
     def set_servo_to_output_mode(self):
         GPIO.setup(SERVO_PIN, GPIO.OUT)

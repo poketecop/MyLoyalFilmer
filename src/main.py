@@ -3,7 +3,7 @@ import sys
 
 from model.Initializer import Initializer
 from model.robot.RobotModule import Robot
-from model.utils.Util import parse_arguments
+from model.utils.RobotUtil import parse_arguments
 
 def main(argv) -> int:
     parameter_list = parse_arguments(argv)
