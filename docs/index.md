@@ -70,6 +70,10 @@ python3 main.py -desired_duty_cycle 20 -process_timeout 120 -initial_delay 25 -c
 cd /home/pi
 cd  Yahboom_Project/MyLoyalFilmer/src
 
+## Servo movement notes
+
+Servos turn better degree by degree. Pulse widht unit by pulse width unit works bad. Direct turning works good but is inconsistent.
+
 ### Markdown
 
 Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
