@@ -39,6 +39,9 @@ SERVOS_MOVEMENT_TRACKING_DELAY = 0.008
 SERVOS_MOVEMENT_TIMES_DELAY = 4
 MIN_COLOR_RADIUS_TO_TRACK = 10
 
+CENTER_X = 320
+CENTER_Y = 240
+
 class Camera:
 
     color_lower = None
@@ -187,17 +190,25 @@ class Camera:
         cv2.circle(frame,(int(color_x),int(color_y)),int(color_radius),(255,0,255),2)
 
     def get_target_value_and_prepare_servos(self, color_x, color_y):
-        self.camera_servos.xservo_pid.SystemOutput = color_x
         self.camera_servos.xservo_pid.SetStepSignal(150)
         self.camera_servos.xservo_pid.SetInertiaTime(0.01, 0.1)
-        target_valuex = int(self.camera_servos.current_x_servo_angle + self.camera_servos.xservo_pid.SystemOutput)
+        target_angle_x = self.calc_target_angle_x(self.camera_servos.current_x_servo_angle, color_x)
         
-        self.camera_servos.yservo_pid.SystemOutput = color_y
         self.camera_servos.yservo_pid.SetStepSignal(150)
         self.camera_servos.yservo_pid.SetInertiaTime(0.01, 0.1)
-        target_valuey = int(self.camera_servos.current_y_servo_angle + self.camera_servos.yservo_pid.SystemOutput)
+        target_angle_y = self.calc_target_angle_y(self.camera_servos.current_y_servo_angle, color_y)
 
-        return target_valuex, target_valuey
+        return target_angle_x, target_angle_y
+    
+    def calc_target_angle_x(self, current_x_angle, target_dot_x, current_x_angle_dot = CENTER_X):
+        ''' Calc target value with a rule of three between current_x_angle, target_dot_x and current_x_angle_dot
+        '''
+        return int(current_x_angle * target_dot_x / current_x_angle_dot)
+
+    def calc_target_angle_y(self, current_y_angle, target_dot_y, current_y_angle_dot = CENTER_Y):
+        ''' Calc target value with a rule of three between current_y_angle, target_dot_y and current_y_angle_dot
+        '''
+        return int(current_y_angle * target_dot_y / current_y_angle_dot)
 
     def get_colors_position_and_color_radius(self, cnts):
         cnt = max (cnts, key = cv2.contourArea)

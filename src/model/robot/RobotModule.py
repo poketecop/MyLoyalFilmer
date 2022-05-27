@@ -161,7 +161,7 @@ class Robot:
     def color_track(self):
         print('\n Entered color_track method.')
 
-        self.camera.camera_servos.init_servos_position()
+        self.camera.camera_servos.init_servos_position_gradually()
 
         t_start = time.time()
 

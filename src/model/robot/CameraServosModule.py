@@ -29,6 +29,11 @@ class CameraServos:
         self.initial_x_servo_angle = initial_x_servo_angle
         self.initial_y_servo_angle = initial_y_servo_angle
 
+    def init_servos_position_gradually(self):
+        self.gradual_degree_servo_control(self.initial_x_servo_angle, self.initial_y_servo_angle)
+        
+        print('Servos initial position set.')
+
     def init_servos_position(self):
         self.servo_control(self.initial_x_servo_angle, self.initial_y_servo_angle)
 
@@ -57,8 +62,33 @@ class CameraServos:
         GPIO.setup(SERVO_PIN, GPIO.OUT)
         GPIO.setup(SERVO_PIN_B, GPIO.OUT)
 
-    # Control servo angle
+    def gradual_degree_servo_control(self, target_x_angle, target_y_angle):
+        '''Gradually move servo to target angle.
+            Call servo_control iteratively from start_x_angle to target_x_angle.
+            Call servo_control iteratively from start_y_angle to target_y_angle.
+        '''
+        x_angle = self.current_x_servo_angle
+        y_angle = self.current_y_servo_angle
+
+        if x_angle < target_x_angle:
+            x_step = 1
+        else:
+            x_step = -1
+        
+        if y_angle < target_y_angle:
+            y_step = 1
+        else:
+            y_step = -1
+
+        while (x_angle < target_x_angle or x_angle > target_x_angle or 
+                y_angle < target_y_angle or y_angle > target_y_angle):
+            self.servo_control(x_angle, y_angle)
+            x_angle += x_step
+            y_angle += y_step
+
+
     def servo_control(self, x_angle, y_angle):
+        '''Control servo angle'''
         self.set_servo_to_output_mode()
 
         # Set angles inside the limits.
@@ -72,9 +102,22 @@ class CameraServos:
         elif y_angle > 2500:
             y_angle = 2500
 
-        self.current_x_servo_angle = x_angle
-        self.current_y_servo_angle = y_angle
+        # If the angle is not changed, do not do anything.
+        if x_angle == self.current_x_servo_angle and y_angle == self.current_y_servo_angle:
+            return
+        
+        if x_angle == self.current_x_servo_angle:
+            self.servo_pulse_y(y_angle)
+            self.current_y_servo_angle = y_angle
+            return
 
+        # Same for y_angle.
+        if y_angle == self.current_y_servo_angle:
+            self.servo_pulse_x(x_angle)
+            self.current_x_servo_angle = x_angle
+            return
+        
+        # If not, change both angles.
         self.servo_pulse_both(x_angle, y_angle)
         
     def calibrate_servos(self):
@@ -159,9 +202,12 @@ class CameraServos:
         
     def servo_pulse_degrees(self, myangle):
         # Convert the Angle to 500-2480 pulse width
-        angle = (myangle * 11) + 500
-        self.servo_pulse(SERVO_PIN, angle)     
+        pulsewith = self.convert_angle_to_pulse_width(myangle)
+        self.servo_pulse(SERVO_PIN, pulsewith)
 
+    def convert_angle_to_pulse_width(self, angle):
+        pulsewidth = (angle * 11) + 500
+        return pulsewidth
    
     def test_servo_control(self):
         self.set_servo_to_output_mode()
