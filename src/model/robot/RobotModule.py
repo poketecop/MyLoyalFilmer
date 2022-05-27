@@ -161,7 +161,8 @@ class Robot:
     def color_track(self):
         print('\n Entered color_track method.')
 
-        self.camera.camera_servos.init_servos_position_gradually()
+        self.camera.camera_servos.init_servos_position()
+        # self.camera.camera_servos.init_servos_position_gradually()
 
         t_start = time.time()
 
@@ -213,8 +214,9 @@ class Robot:
                         delay_end_time = None
                         continue
 
-                    target_valuex, target_valuey = self.camera.get_target_value_and_prepare_servos(color_x, color_y)
-                    
+                    target_angle_x = self.camera.calc_target_angle_x(self.camera.camera_servos.current_x_servo_angle, color_x)
+                    target_angle_y = self.camera.calc_target_angle_y(self.camera.camera_servos.current_y_servo_angle, color_y)
+    
                     if not delay_end_time:
                         delay_end_time = time.perf_counter() + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
                         continue
@@ -222,8 +224,8 @@ class Robot:
                         continue
                     delay_end_time = None
                     
-                    print('\n X target angle: ' + str(target_valuex) + '\n Y target angle:' + str(target_valuey))
-                    self.camera.camera_servos.servo_control(target_valuex, target_valuey)
+                    print('\n X target angle: ' + str(target_angle_x) + '\n Y target angle:' + str(target_angle_y))
+                    self.camera.camera_servos.servo_control(target_angle_x, target_angle_y)
 
         self.camera.finish_filming()
         

@@ -1,7 +1,6 @@
 #-*- coding:UTF-8 -*-
 import RPi.GPIO as GPIO
 import time
-from model.robot import PID
 from model.utils.RobotUtil import sleep
 
 SERVO_PIN = 11  #S2
@@ -12,9 +11,6 @@ DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE = 1500
 
 class CameraServos:
 
-    xservo_pid = None
-    yservo_pid = None
-
     initial_x_servo_angle = None
     initial_y_servo_angle = None
 
@@ -23,18 +19,21 @@ class CameraServos:
 
 
     def __init__(self, initial_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, initial_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE):
-        self.xservo_pid = PID.PositionalPID(0.8, 0.1, 0.3)
-        self.yservo_pid = PID.PositionalPID(0.4, 0.1, 0.2)
+        # Current servo angles initial values are centered.
+        self.current_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE
+        self.current_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE
 
         self.initial_x_servo_angle = initial_x_servo_angle
         self.initial_y_servo_angle = initial_y_servo_angle
 
     def init_servos_position_gradually(self):
         self.gradual_degree_servo_control(self.initial_x_servo_angle, self.initial_y_servo_angle)
-        
+
         print('Servos initial position set.')
 
     def init_servos_position(self):
+        self.servo_control(DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE)
+        time.sleep(1)
         self.servo_control(self.initial_x_servo_angle, self.initial_y_servo_angle)
 
         print('\nServos initial position set.')
