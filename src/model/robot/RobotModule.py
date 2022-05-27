@@ -222,6 +222,7 @@ class Robot:
                         continue
                     if time.perf_counter() < delay_end_time:
                         continue
+                    times = 0
                     delay_end_time = None
                     
                     print('\n X target angle: ' + str(target_angle_x) + '\n Y target angle:' + str(target_angle_y))

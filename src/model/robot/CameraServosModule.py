@@ -32,8 +32,9 @@ class CameraServos:
         print('Servos initial position set.')
 
     def init_servos_position(self):
+        #TODO: This is not turning to times but only one time.
         self.servo_control(DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE)
-        time.sleep(1)
+        time.sleep(2)
         self.servo_control(self.initial_x_servo_angle, self.initial_y_servo_angle)
 
         print('\nServos initial position set.')
@@ -199,10 +200,10 @@ class CameraServos:
         print("\nMax x:" + str(max_x))
         print("\nMax y:" + str(max_y))        
         
-    def servo_pulse_degrees(self, myangle):
+    def servo_control_degrees(self, myangle):
         # Convert the Angle to 500-2480 pulse width
         pulsewith = self.convert_angle_to_pulse_width(myangle)
-        self.servo_pulse(SERVO_PIN, pulsewith)
+        self.servo_control(pulsewith, pulsewith)
 
     def convert_angle_to_pulse_width(self, angle):
         pulsewidth = (angle * 11) + 500
@@ -211,20 +212,22 @@ class CameraServos:
     def test_servo_control(self):
         self.set_servo_to_output_mode()
         
-        self.servo_pulse_degrees(90)
+        self.servo_control_degrees(90)
 
         time.sleep(2)
 
         pos = 0
         while pos < 180:
-            self.servo_pulse_degrees(pos)
+            self.servo_control_degrees(pos)
+            print(pos)
             pos = pos + 1
             time.sleep(0.1)
 
         time.sleep(2)
         pos = 180   
         while pos > 0:
-            self.servo_pulse_degrees(pos)
+            self.servo_control_degrees(pos)
+            print(pos)
             pos = pos - 1
             time.sleep(0.1)
     

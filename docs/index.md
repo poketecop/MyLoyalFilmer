@@ -64,7 +64,7 @@ Y = current y-angle * target dot/240
 
 cd  Yahboom_Project/MyLoyalFilmer/src
 
-python3 main.py -desired_duty_cycle 20 -process_timeout 120 -initial_delay 25 -color_to_track RED -mode COLOR_TRACK -initial_x_servo_angle 2200 -initial_y_servo_angle 1000 -tracking_laps 0
+python3 main.py -desired_duty_cycle 20 -process_timeout 120 -initial_delay 25 -color_to_track RED -mode COLOR_TRACK -initial_x_servo_angle 2300 -initial_y_servo_angle 1600 -tracking_laps 0
 
 
 cd /home/pi
