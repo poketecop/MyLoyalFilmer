@@ -209,9 +209,7 @@ class CameraServos:
         pulsewidth = (angle * 11) + 500
         return pulsewidth
    
-    def test_servo_control(self):
-        self.set_servo_to_output_mode()
-        
+    def test_servo_control(self):        
         self.servo_control_degrees(90)
 
         time.sleep(2)
