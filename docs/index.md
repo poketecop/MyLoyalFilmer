@@ -54,6 +54,8 @@ X = current x-angle * target dot/320
 Example
 -------
 X = 160 * (204.7943878173828/320) = 102,397195
+    degrees * pixels/pixels
+    degrees * ...
 X = 160 * (500/320) = 250
 
 Base example
