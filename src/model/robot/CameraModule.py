@@ -189,7 +189,15 @@ class Camera:
     def mark_the_detected_colors(self, frame, color_x, color_y, color_radius):
         cv2.circle(frame,(int(color_x),int(color_y)),int(color_radius),(255,0,255),2)
     
-    #TODO: Mirror making it reverse.
+    def mirror_frame(self, frame):
+        return cv2.flip(frame, 1)
+
+    def get_target_angles(self, color_x, color_y):
+        target_angle_x = self.calc_target_angle_x(self.camera_servos.current_x_servo_angle, color_x)
+        target_angle_y = self.calc_target_angle_y(self.camera_servos.current_y_servo_angle, color_y)
+
+        return target_angle_x, target_angle_y
+
     def calc_target_angle_x(self, current_x_angle, target_dot_x, current_x_angle_dot = CENTER_X):
         ''' Calc target value with a rule of three between current_x_angle, target_dot_x and current_x_angle_dot
         '''

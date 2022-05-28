@@ -183,6 +183,8 @@ class Robot:
                 # Break the loop
                 break
 
+            self.camera.mirror_frame(frame)
+
             # Write the frame into the
             # file 'filename.avi'
             self.camera.result.write(frame)
@@ -214,8 +216,7 @@ class Robot:
                         delay_end_time = None
                         continue
 
-                    target_angle_x = self.camera.calc_target_angle_x(self.camera.camera_servos.current_x_servo_angle, color_x)
-                    target_angle_y = self.camera.calc_target_angle_y(self.camera.camera_servos.current_y_servo_angle, color_y)
+                    target_angle_x, target_angle_y = self.camera.get_target_angles(color_x, color_y)
     
                     if not delay_end_time:
                         delay_end_time = time.perf_counter() + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
