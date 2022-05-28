@@ -34,16 +34,29 @@ class Robot:
 
     tracking_finished = False
 
-    def __init__(self, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name):
+    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name):
+        
+        if 'mode' in parameter_list:
+            mode = parameter_list['mode']
+        
+        if 'process_timeout' in parameter_list:
+            process_timeout = int(parameter_list['process_timeout'])
+        
+        if 'initial_delay' in parameter_list:
+            initial_delay = int(parameter_list['initial_delay'])
+
+        if 'tracking_laps' in parameter_list:
+            tracking_laps = int(parameter_list['tracking_laps'])
+        
         self.init_pin_numbering_mode()
         self.process_timeout = process_timeout
         self.initial_delay = initial_delay
         self.tracking_laps = tracking_laps
         self.mode = mode
 
-        self.motors = Motors()
+        self.motors = Motors(parameter_list)
         self.tracking_module = TrackingModule()
-        self.camera = CameraModule.Camera(process_timeout = process_timeout)
+        self.camera = CameraModule.Camera(parameter_list, process_timeout = process_timeout)
         
     def play(self):
         try:

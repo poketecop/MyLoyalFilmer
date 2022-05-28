@@ -31,15 +31,13 @@ class AlternativeCameraServos:
         self.initial_x_servo_angle = initial_x_servo_angle
         self.initial_y_servo_angle = initial_y_servo_angle
 
-        GPIO.setmode(GPIO.BOARD)
-
         GPIO.setup(SERVO_PIN, GPIO.OUT)
-        pwm_x = GPIO.PWM(SERVO_PIN, fPWM)
-        pwm_x.start(0)
+        self.pwm_x = GPIO.PWM(SERVO_PIN, fPWM)
+        self.pwm_x.start(0)
 
         GPIO.setup(SERVO_PIN_B, GPIO.OUT)
-        pwm_x = GPIO.PWM(SERVO_PIN_B, fPWM)
-        pwm_x.start(0)
+        self.pwm_y = GPIO.PWM(SERVO_PIN_B, fPWM)
+        self.pwm_y.start(0)
 
     def init_servos_position(self):
         #TODO: This is not turning to times but only one time.
@@ -98,13 +96,13 @@ class AlternativeCameraServos:
         return duty
 
     def test_servo_control(self):        
-        self.servo_control(90)
+        self.servo_control(DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE)
 
         time.sleep(2)
 
         pos = 0
         while pos < 180:
-            self.servo_control(pos)
+            self.servo_control(pos, pos)
             print(pos)
             pos = pos + 1
             time.sleep(0.1)
@@ -112,7 +110,7 @@ class AlternativeCameraServos:
         time.sleep(2)
         pos = 180   
         while pos > 0:
-            self.servo_control(pos)
+            self.servo_control(pos, pos)
             print(pos)
             pos = pos - 1
             time.sleep(0.1)

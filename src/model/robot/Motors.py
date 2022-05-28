@@ -25,7 +25,10 @@ class Motors:
     desired_left_duty_cycle = None
     desired_right_duty_cycle = None
 
-    def __init__(self, desired_duty_cycle = DEFAULT_DESIRED_DUTY_CYCLE):
+    def __init__(self, parameter_list, desired_duty_cycle = DEFAULT_DESIRED_DUTY_CYCLE):
+        if 'desired_duty_cycle' in parameter_list:
+            desired_duty_cycle = int(parameter_list['desired_duty_cycle'])
+        
         self.init_desired_duty_cycle(desired_duty_cycle)
 
         GPIO.setup(ENA,GPIO.OUT,initial=GPIO.HIGH)

@@ -74,6 +74,10 @@ cd  Yahboom_Project/MyLoyalFilmer/src
 
 Servos turn better degree by degree. Pulse widht unit by pulse width unit works bad. Direct turning works good but is inconsistent.
 
+Test.
+
+python3 main.py -mode TEST_CAMERA_SERVO_CONTROL -alternative_camera_servos yes
+
 ### Markdown
 
 Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for

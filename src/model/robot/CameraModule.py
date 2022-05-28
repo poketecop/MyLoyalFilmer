@@ -10,6 +10,9 @@ from datetime import datetime as dt
 
 import ipywidgets.widgets as widgets
 from IPython.display import display
+from model.robot import AlternativeCameraServosModule
+
+from model.robot.AlternativeCameraServosModule import AlternativeCameraServos
 
 class TrackableColor(Enum):
     RED = 1
@@ -54,8 +57,17 @@ class Camera:
 
     stop = False
 
-    def __init__(self, process_timeout, color_to_track = TrackableColor.RED.name):
-        self.camera_servos = CameraServosModule.CameraServos()
+    def __init__(self, parameter_list, process_timeout, color_to_track = TrackableColor.RED.name, alternative_camera_servos = False):
+        if 'color_to_track' in parameter_list:
+            color_to_track = parameter_list['color_to_track']
+        if 'alternative_camera_servos' in parameter_list:
+            alternative_camera_servos = parameter_list['alternative_camera_servos'].lower() == 'yes'
+
+        if alternative_camera_servos:
+            self.camera_servos = AlternativeCameraServosModule.AlternativeCameraServos(parameter_list)
+        else:
+            self.camera_servos = CameraServosModule.CameraServos(parameter_list)
+
         self.process_timeout = process_timeout
         self.set_color_to_track(color_to_track)
         

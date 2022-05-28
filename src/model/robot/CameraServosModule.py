@@ -18,7 +18,13 @@ class CameraServos:
     current_y_servo_angle = None
 
 
-    def __init__(self, initial_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, initial_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE):
+    def __init__(self, parameter_list, initial_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, initial_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE):
+        if 'initial_x_servo_angle' in parameter_list:
+            initial_x_servo_angle = int(parameter_list['initial_x_servo_angle'])
+        
+        if 'initial_y_servo_angle' in parameter_list:
+            initial_y_servo_angle = int(parameter_list['initial_y_servo_angle'])
+        
         # Current servo angles initial values are centered.
         self.current_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE
         self.current_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE
