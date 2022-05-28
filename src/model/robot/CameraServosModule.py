@@ -47,9 +47,11 @@ class CameraServos:
     
     def servo_pulse_x(self, myangleA):
         self.servo_pulse(SERVO_PIN, myangleA)
+        self.current_x_servo_angle = myangleA
 
     def servo_pulse_y(self, myangleB):
         self.servo_pulse(SERVO_PIN_B, myangleB)
+        self.current_y_servo_angle = myangleB
 
     def servo_pulse(self, pin, angle):
         pulsewidth = angle
@@ -108,13 +110,11 @@ class CameraServos:
         
         if x_angle == self.current_x_servo_angle:
             self.servo_pulse_y(y_angle)
-            self.current_y_servo_angle = y_angle
             return
 
         # Same for y_angle.
         if y_angle == self.current_y_servo_angle:
             self.servo_pulse_x(x_angle)
-            self.current_x_servo_angle = x_angle
             return
         
         # If not, change both angles.

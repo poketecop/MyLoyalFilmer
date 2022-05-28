@@ -62,7 +62,7 @@ class Robot:
             elif self.mode == Mode.TEST_CAMERA_SERVO_CONTROL.name:
                 self.camera.camera_servos.test_servo_control()
             
-        except IOError as error:
+        except Exception as error:
             print(error)
         finally:
             GPIO.cleanup()
@@ -183,12 +183,16 @@ class Robot:
                 # Break the loop
                 break
 
-            self.camera.mirror_frame(frame)
-
             # Write the frame into the
             # file 'filename.avi'
             self.camera.result.write(frame)
 
+            # Bigger angle turns left, smaller angle turns right,
+            # so if contours center is at the right of the image (bigger x and y than center):
+            # it would turn left instead of right as target angle would be bigger.
+            # Mirror the frame solves this problem.
+            frame = self.camera.mirror_frame(frame)
+            
             cnts = self.camera.get_color_countours(frame)
 
             cnts_len = len(cnts)

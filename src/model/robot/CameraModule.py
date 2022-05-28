@@ -201,12 +201,12 @@ class Camera:
     def calc_target_angle_x(self, current_x_angle, target_dot_x, current_x_angle_dot = CENTER_X):
         ''' Calc target value with a rule of three between current_x_angle, target_dot_x and current_x_angle_dot
         '''
-        return int(current_x_angle * target_dot_x / current_x_angle_dot)
+        return int(current_x_angle * (target_dot_x / current_x_angle_dot))
 
     def calc_target_angle_y(self, current_y_angle, target_dot_y, current_y_angle_dot = CENTER_Y):
         ''' Calc target value with a rule of three between current_y_angle, target_dot_y and current_y_angle_dot
         '''
-        return int(current_y_angle * target_dot_y / current_y_angle_dot)
+        return int(current_y_angle * (target_dot_y / current_y_angle_dot))
 
     def get_colors_position_and_color_radius(self, cnts):
         cnt = max (cnts, key = cv2.contourArea)
