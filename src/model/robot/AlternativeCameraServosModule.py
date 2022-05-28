@@ -11,6 +11,9 @@ b = 2
 DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE = 90
 DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE = 90
 
+ANGLE_SAFE_MARGIN_X = 5
+ANGLE_SAFE_MARGIN_Y = 5
+
 class AlternativeCameraServos:
 
     initial_x_servo_angle = None
@@ -23,7 +26,13 @@ class AlternativeCameraServos:
     pwm_y = None
 
 
-    def __init__(self, initial_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, initial_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE):
+    def __init__(self, parameter_list, initial_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, initial_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE):
+        if 'initial_x_servo_angle' in parameter_list:
+            initial_x_servo_angle = int(parameter_list['initial_x_servo_angle'])
+        
+        if 'initial_y_servo_angle' in parameter_list:
+            initial_y_servo_angle = int(parameter_list['initial_y_servo_angle'])
+        
         # Current servo angles initial values are centered.
         self.current_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE
         self.current_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE
@@ -51,15 +60,15 @@ class AlternativeCameraServos:
         '''Control servo angle'''
 
         # Set angles inside the limits.
-        if x_angle < 0:
-            x_angle = 0
-        elif x_angle > 180:
-            x_angle = 180
+        if x_angle <= 0:
+            x_angle = 0 + ANGLE_SAFE_MARGIN_X
+        elif x_angle >= 180:
+            x_angle = 180 - ANGLE_SAFE_MARGIN_X
             
-        if y_angle < 0:
-            y_angle = 0
-        elif y_angle > 180:
-            y_angle = 180
+        if y_angle <= 0:
+            y_angle = 0 + ANGLE_SAFE_MARGIN_Y
+        elif y_angle >= 180:
+            y_angle = 180 - ANGLE_SAFE_MARGIN_Y
 
         # If the angle is not changed, do not do anything.
         if x_angle == self.current_x_servo_angle and y_angle == self.current_y_servo_angle:

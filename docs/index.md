@@ -51,6 +51,16 @@ X/current x-angle = target dot/320
 
 X = current x-angle * target dot/320
 
+Example
+-------
+X = 160 * (204.7943878173828/320) = 102,397195
+X = 160 * (500/320) = 250
+
+Base example
+------------
+X = 90 * 0/320 = 0
+
+
 Rule of three for y
 -------------------
 
@@ -60,11 +70,15 @@ X/current x-angle = target dot/240
 
 Y = current y-angle * target dot/240
 
+This is not right because dot 0 0 doesn't mean 0 0 angle and 640 240 doesn't mean 180 180 angle.
+
 ## Commands
 
 cd  Yahboom_Project/MyLoyalFilmer/src
 
 python3 main.py -desired_duty_cycle 20 -process_timeout 120 -initial_delay 25 -color_to_track RED -mode COLOR_TRACK -initial_x_servo_angle 2300 -initial_y_servo_angle 1600 -tracking_laps 0
+
+python3 main.py -desired_duty_cycle 20 -process_timeout 60 -initial_delay 25 -color_to_track RED -mode COLOR_TRACK -initial_x_servo_angle 160 -initial_y_servo_angle 80 -tracking_laps 0 -alternative_camera_servos yes
 
 
 cd /home/pi
