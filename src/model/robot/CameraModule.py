@@ -50,7 +50,7 @@ X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 CENTER_X = X_RESOLUTION / 2
 CENTER_Y = Y_RESOLUTION / 2
 
-ACCEPTABLE_MARGIN_X = 20
+ACCEPTABLE_MARGIN_X = 30
 ACCEPTABLE_MARGIN_Y = ACCEPTABLE_MARGIN_X/X_Y_RESOLUTION_RELATION
 
 LEFT_ACCEPTABLE_X = CENTER_X - ACCEPTABLE_MARGIN_X
@@ -244,16 +244,23 @@ class Camera:
         return (color_x,color_y), color_radius
 
     def check_and_move_servos(self, color_x, color_y, color_radius, degrees):
+        moved = False
+
         if color_x < LEFT_ACCEPTABLE_X:
             self.camera_servos.move_anticlockwise(degrees)
+            moved = True
         elif color_x > RIGHT_ACCEPTABLE_X:
             self.camera_servos.move_clockwise(degrees)
+            moved = True
 
         if color_y < UP_ACCEPTABLE_Y:
             self.camera_servos.move_up(degrees)
+            moved = True
         elif color_y > DOWN_ACCEPTABLE_Y:
             self.camera_servos.move_down(degrees)
+            moved = True
 
+        return moved
 
     def print_pixels_per_angle(self):
         self.camera_servos.init_servos_position()

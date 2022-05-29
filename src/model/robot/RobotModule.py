@@ -283,8 +283,8 @@ class Robot:
             times_to_be_consistent_trackable_color = 0
             times_interval_end_time = None
             
-            self.camera.check_and_move_servos(color_x, color_y, color_radius, CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR)
-            delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
+            if self.camera.check_and_move_servos(color_x, color_y, color_radius, CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
+                delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
 
         self.camera.finish_filming()
         
