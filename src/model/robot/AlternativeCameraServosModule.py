@@ -71,6 +71,10 @@ class AlternativeCameraServos:
         time.sleep(2)
         self.servo_control(self.initial_x_servo_angle, self.initial_y_servo_angle)
 
+        # Initially, previous angles and current angles are the same.
+        self.previous_x_servo_angle = self.current_x_servo_angle
+        self.previous_y_servo_angle = self.current_y_servo_angle
+
         print('\nServos initial position set.')
 
     def servo_control(self, x_angle, y_angle):
