@@ -1,4 +1,5 @@
 #-*- coding:UTF-8 -*-
+from enum import Enum
 import RPi.GPIO as GPIO
 import time
 
@@ -14,6 +15,16 @@ DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE = 90
 ANGLE_SAFE_MARGIN_X = 5
 ANGLE_SAFE_MARGIN_Y = 5
 
+class DirectionX(Enum):
+    NO_CHANGE = 0
+    CLOCKWISE = 1
+    ANTICLOCKWISE = 2
+
+class DirectionY(Enum):
+    NO_CHANGE = 0
+    UP = 1
+    DOWN = 2
+
 class AlternativeCameraServos:
 
     initial_x_servo_angle = None
@@ -21,6 +32,9 @@ class AlternativeCameraServos:
 
     current_x_servo_angle = None
     current_y_servo_angle = None
+
+    previous_x_servo_angle = None
+    previous_y_servo_angle = None
 
     pwm_x = None
     pwm_y = None
@@ -36,6 +50,10 @@ class AlternativeCameraServos:
         # Current servo angles initial values are centered.
         self.current_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE
         self.current_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE
+
+        # Initially, previous angles and current angles are the same.
+        self.previous_x_servo_angle = self.current_x_servo_angle
+        self.previous_y_servo_angle = self.current_y_servo_angle
 
         self.initial_x_servo_angle = initial_x_servo_angle
         self.initial_y_servo_angle = initial_y_servo_angle
@@ -92,11 +110,15 @@ class AlternativeCameraServos:
     def servo_pulse_x(self, myangleA):
         duty = self.calc_duty_cycle(myangleA)
         self.pwm_x.ChangeDutyCycle(duty)
+        # Save the current angle as previous angle.
+        self.previous_x_servo_angle = self.current_x_servo_angle
         self.current_x_servo_angle = myangleA
 
     def servo_pulse_y(self, myangleB):
         duty = self.calc_duty_cycle(myangleB)
         self.pwm_y.ChangeDutyCycle(duty)
+        # Save the current angle as previous angle.
+        self.previous_y_servo_angle = self.current_y_servo_angle
         self.current_y_servo_angle = myangleB
 
     def calc_duty_cycle(self, angle):
@@ -134,3 +156,38 @@ class AlternativeCameraServos:
 
     def move_down(self, degrees):
         self.servo_control(self.current_x_servo_angle, self.current_y_servo_angle - degrees)
+
+    def calc_current_direction(self):
+        '''Return a list with CLOCKWISE/ANTICLOCKWISE direction and UP/DOWN direction.
+        '''
+        # Calculate the current direction.
+        if self.current_x_servo_angle > self.previous_x_servo_angle:
+            direction_x = DirectionX.CLOCKWISE
+        elif self.current_x_servo_angle < self.previous_x_servo_angle:
+            direction_x = DirectionX.ANTICLOCKWISE
+        else:
+            direction_x = DirectionX.NO_CHANGE
+
+        if self.current_y_servo_angle > self.previous_y_servo_angle:
+            direction_y = DirectionY.UP
+        elif self.current_y_servo_angle < self.previous_y_servo_angle:
+            direction_y = DirectionY.DOWN
+        else:
+            direction_y = DirectionY.NO_CHANGE
+
+        return direction_x, direction_y
+
+    def move_in_current_direction(self, degrees):
+        '''Move in the current direction.
+        '''
+        direction_x, direction_y = self.calc_current_direction()
+        if direction_x == DirectionX.CLOCKWISE:
+            self.move_clockwise(degrees)
+        elif direction_x == DirectionX.ANTICLOCKWISE:
+            self.move_anticlockwise(degrees)
+        
+        if direction_y == DirectionY.UP:
+            self.move_up(degrees)
+        elif direction_y == DirectionY.DOWN:
+            self.move_down(degrees)
+        

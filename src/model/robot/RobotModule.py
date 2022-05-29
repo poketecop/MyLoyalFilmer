@@ -12,6 +12,9 @@ DEFAULT_PROCESS_TIMEOUT = 10
 DEFAULT_INITIAL_DELAY = 2
 DEFAULT_TRACKING_LAPS = 1
 
+DEGREES_TO_MOVE_TO_TRACK_COLOR = 1
+DELAY_TO_TRACK_AFTER_MOVING = 0.1
+
 class Mode(Enum):
     TRACK_LINE = 1
     FILM = 2
@@ -187,8 +190,9 @@ class Robot:
         self.camera.init_film_capture()
         self.camera.init_film_saving()
         
-        times = 0
-        delay_end_time = None
+        times_to_be_consistent_trackable_color = 0
+        times_interval_end_time = None
+        delay_to_track_after_moving_end_time = None
         while time.time() < t_start + self.process_timeout:
             if self.camera.stop:
                 break
@@ -201,53 +205,65 @@ class Robot:
 
             # Write the frame into the
             # file 'filename.avi'
-            self.camera.result.write(frame)
-
-            # Bigger angle turns left, smaller angle turns right,
-            # so if contours center is at the right of the image (bigger x and y than center):
-            # it would turn left instead of right as target angle would be bigger.
-            # Mirror the frame solves this problem.
-            frame = self.camera.mirror_frame(frame)
+            if not self.debug:
+                self.camera.result.write(frame)
             
+            if delay_to_track_after_moving_end_time:
+                if time.perf_counter() < delay_to_track_after_moving_end_time:
+                    continue
+                delay_to_track_after_moving_end_time = None
+
             cnts = self.camera.get_color_countours(frame)
 
             cnts_len = len(cnts)
             print('\nCountours: ' + str(cnts_len))
 
-            if cnts_len > 0:
-                (color_x,color_y), color_radius = self.camera.get_colors_position_and_color_radius(cnts)
+            if cnts_len <= 0:
+                times_to_be_consistent_trackable_color = 0
+                self.camera.camera_servos.move_in_current_direction(DEGREES_TO_MOVE_TO_TRACK_COLOR)
+                delay_to_track_after_moving_end_time = time.perf_counter() + DELAY_TO_TRACK_AFTER_MOVING
+                continue
+
+            (color_x,color_y), color_radius = self.camera.get_colors_position_and_color_radius(cnts)
+            
+            print('\nColor radius:' + str(color_radius))
+
+            if color_radius < CameraModule.MIN_COLOR_RADIUS_TO_TRACK:
+                times_to_be_consistent_trackable_color = 0
+                self.camera.camera_servos.move_in_current_direction(DEGREES_TO_MOVE_TO_TRACK_COLOR)
+                delay_to_track_after_moving_end_time = time.perf_counter() + DELAY_TO_TRACK_AFTER_MOVING
+                continue
+            
+            if self.debug:
+                # Mark the detected colors
+                self.camera.mark_the_detected_colors(frame, color_x, color_y, color_radius)
+                self.camera.result.write(frame)
                 
-                print('\nColor radius:' + str(color_radius))
+            # Consistent trackable color.
+            if times_to_be_consistent_trackable_color < CameraModule.SERVOS_MOVEMENT_TIMES_DELAY:
+                # Can't use sleep if not necessary to keep capturing video
+                # So we will check intervals of SERVOS_MOVEMENT_TRACKING_DELAY until SERVOS_MOVEMENT_TIMES_DELAY times.
+                if not times_interval_end_time:
+                    times_interval_end_time = time.perf_counter() + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
+                    # Calc for an interval.
+                    continue
+                
+                # Check for an interval.
+                if time.perf_counter() < times_interval_end_time:
+                    continue
 
-                if color_radius > CameraModule.MIN_COLOR_RADIUS_TO_TRACK:
-                    if times < CameraModule.SERVOS_MOVEMENT_TIMES_DELAY:
-                        # Can't use sleep if not necessary to keep capturing video
-                        # So we will check intervals of SERVOS_MOVEMENT_TRACKING_DELAY until SERVOS_MOVEMENT_TIMES_DELAY times.
-                        if not delay_end_time:
-                            delay_end_time = time.perf_counter() + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
-                            # Calc for an interval.
-                            continue
-                        
-                        # Check for an interval.
-                        if time.perf_counter() < delay_end_time:
-                            continue
+                # One less time to be a consistent trackable color.
+                times_to_be_consistent_trackable_color =  times_to_be_consistent_trackable_color +  1
+                # Reset the interval.
+                times_interval_end_time = None
+                continue
 
-                        times =  times +  1
-                        delay_end_time = None
-                        continue
-
-                    target_angle_x, target_angle_y = self.camera.get_target_angles(color_x, color_y)
-    
-                    if not delay_end_time:
-                        delay_end_time = time.perf_counter() + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
-                        continue
-                    if time.perf_counter() < delay_end_time:
-                        continue
-                    times = 0
-                    delay_end_time = None
-                    
-                    print('\n X target angle: ' + str(target_angle_x) + '\n Y target angle:' + str(target_angle_y))
-                    self.camera.camera_servos.servo_control(target_angle_x, target_angle_y)
+            # Reset the times.
+            times_to_be_consistent_trackable_color = 0
+            times_interval_end_time = None
+            
+            self.camera.check_and_move_servos(color_x, color_y, color_radius, DEGREES_TO_MOVE_TO_TRACK_COLOR)
+            delay_to_track_after_moving_end_time = time.perf_counter() + DELAY_TO_TRACK_AFTER_MOVING
 
         self.camera.finish_filming()
         

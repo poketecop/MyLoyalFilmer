@@ -42,8 +42,22 @@ SERVOS_MOVEMENT_TRACKING_DELAY = 0.008
 SERVOS_MOVEMENT_TIMES_DELAY = 4
 MIN_COLOR_RADIUS_TO_TRACK = 10
 
-CENTER_X = 320
-CENTER_Y = 240
+X_RESOLUTION = 640
+Y_RESOLUTION = 480
+
+X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
+
+CENTER_X = X_RESOLUTION / 2
+CENTER_Y = Y_RESOLUTION / 2
+
+ACCEPTABLE_MARGIN_X = 20
+ACCEPTABLE_MARGIN_Y = ACCEPTABLE_MARGIN_X/X_Y_RESOLUTION_RELATION
+
+LEFT_ACCEPTABLE_X = CENTER_X - ACCEPTABLE_MARGIN_X
+RIGHT_ACCEPTABLE_X = CENTER_X + ACCEPTABLE_MARGIN_X
+
+UP_ACCEPTABLE_Y = CENTER_Y - ACCEPTABLE_MARGIN_Y
+DOWN_ACCEPTABLE_Y = CENTER_Y + ACCEPTABLE_MARGIN_Y
 
 class Camera:
 
@@ -225,6 +239,18 @@ class Camera:
         (color_x,color_y), color_radius = cv2.minEnclosingCircle(cnt)
 
         return (color_x,color_y), color_radius
+
+    def check_and_move_servos(self, color_x, color_y, color_radius, degrees):
+        if color_x < LEFT_ACCEPTABLE_X:
+            self.camera_servos.move_anticlockwise(degrees)
+        elif color_x > RIGHT_ACCEPTABLE_X:
+            self.camera_servos.move_clockwise(degrees)
+
+        if color_y < UP_ACCEPTABLE_Y:
+            self.camera_servos.move_up(degrees)
+        elif color_y > DOWN_ACCEPTABLE_Y:
+            self.camera_servos.move_down(degrees)
+
 
     def print_pixels_per_angle(self):
         self.camera_servos.init_servos_position()
