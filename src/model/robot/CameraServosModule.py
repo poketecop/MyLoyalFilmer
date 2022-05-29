@@ -234,6 +234,18 @@ class CameraServos:
             print(pos)
             pos = pos - 1
             time.sleep(0.1)
+
+    def move_clockwise():
+        raise NotImplementedError
+
+    def move_anticlockwise():
+        raise NotImplementedError
+
+    def move_up():
+        raise NotImplementedError
+    
+    def move_down():
+        raise NotImplementedError
     
 
             

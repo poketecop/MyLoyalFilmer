@@ -49,7 +49,6 @@ class AlternativeCameraServos:
         self.pwm_y.start(0)
 
     def init_servos_position(self):
-        #TODO: This is not turning to times but only one time.
         self.servo_control(DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE)
         time.sleep(2)
         self.servo_control(self.initial_x_servo_angle, self.initial_y_servo_angle)
@@ -123,3 +122,15 @@ class AlternativeCameraServos:
             print(pos)
             pos = pos - 1
             time.sleep(0.1)
+
+    def move_clockwise(self, degrees):
+        self.servo_control(self.current_x_servo_angle - degrees, self.current_y_servo_angle)
+
+    def move_anticlockwise(self, degrees):
+        self.servo_control(self.current_x_servo_angle + degrees, self.current_y_servo_angle)
+
+    def move_up(self, degrees):
+        self.servo_control(self.current_x_servo_angle, self.current_y_servo_angle + degrees)
+
+    def move_down(self, degrees):
+        self.servo_control(self.current_x_servo_angle, self.current_y_servo_angle - degrees)

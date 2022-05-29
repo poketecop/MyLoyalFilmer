@@ -226,4 +226,81 @@ class Camera:
 
         return (color_x,color_y), color_radius
 
+    def print_pixels_per_angle(self):
+        self.camera_servos.init_servos_position()
+
+        self.init_film_capture()
+
+        ret, frame = self.image.read()
+
+        if not ret:
+            return
+
+        initial_gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # Detect feature points in previous frame
+        initial_pts = cv2.goodFeaturesToTrack(initial_gray,
+                                            maxCorners=200,
+                                            qualityLevel=0.01,
+                                            minDistance=30,
+                                            blockSize=3
+        )
+
+        self.camera_servos.move_clockwise(1)
+
+        ret, frame = self.image.read()
+
+        if not ret:
+            return
+
+        x_moved_gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # Detect feature points in previous frame
+        x_moved_pts = cv2.goodFeaturesToTrack(x_moved_gray,
+                                            maxCorners=200,
+                                            qualityLevel=0.01,
+                                            minDistance=30,
+                                            blockSize=3
+        )
+    
+        # Calculate the pixel per angle
+        # Compare the two sets of feature points
+        # and calculate the pixel per angle.
+        # The result is stored in 'pixels_per_angle_x'
+        m = cv2.estimateRigidTransform(initial_pts, x_moved_pts, fullAffine=False) #will only work with OpenCV-3 or less
+        # Extract traslation
+        pixels_per_angle_x = m[0,2]
+
+        print("\nPixels per angle x: " + str(pixels_per_angle_x))
+
+        self.camera_servos.move_up(1)
+
+        ret, frame = self.image.read()
+
+        if not ret:
+            return
+        
+        y_moved_gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # Detect feature points in previous frame
+        y_moved_pts = cv2.goodFeaturesToTrack(y_moved_gray,
+                                            maxCorners=200,
+                                            qualityLevel=0.01,
+                                            minDistance=30,
+                                            blockSize=3
+        )
+
+        # Calculate the pixel per angle
+        # Compare the two sets of feature points
+        # and calculate the pixel per angle.
+        # The result is stored in 'pixels_per_angle_y'
+        m = cv2.estimateRigidTransform(x_moved_pts, y_moved_pts, fullAffine=False) #will only work with OpenCV-3 or less
+
+        # Extract traslation
+        pixels_per_angle_y = m[0,2]
+
+        print("\nPixels per angle y: " + str(pixels_per_angle_y))
+
+
+
     

@@ -20,6 +20,7 @@ class Mode(Enum):
     CALIBRATE_CAMERA_SERVOS = 5
     TEST_COLOR_TRACK = 6
     TEST_CAMERA_SERVO_CONTROL = 7
+    PRINT_PIXELS_PER_ANGLE = 8
 
 class Robot:
 
@@ -74,6 +75,8 @@ class Robot:
                 self.test_color_track()
             elif self.mode == Mode.TEST_CAMERA_SERVO_CONTROL.name:
                 self.camera.camera_servos.test_servo_control()
+            elif self.mode == Mode.PRINT_PIXELS_PER_ANGLE.name:
+                self.camera.print_pixels_per_angle()
             
         except Exception as error:
             print(error)
