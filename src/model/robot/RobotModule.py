@@ -38,7 +38,7 @@ class Robot:
 
     tracking_finished = False
 
-    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name):
+    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False):
         
         if 'mode' in parameter_list:
             mode = parameter_list['mode']
@@ -51,12 +51,16 @@ class Robot:
 
         if 'tracking_laps' in parameter_list:
             tracking_laps = int(parameter_list['tracking_laps'])
+
+        if 'debug' in parameter_list:
+            debug = parameter_list['debug'].lower() == 'yes'
         
         self.init_pin_numbering_mode()
         self.process_timeout = process_timeout
         self.initial_delay = initial_delay
         self.tracking_laps = tracking_laps
         self.mode = mode
+        self.debug = debug
 
         self.motors = Motors(parameter_list)
         self.tracking_module = TrackingModule()
@@ -189,6 +193,8 @@ class Robot:
 
         self.camera.init_film_capture()
         self.camera.init_film_saving()
+        if self.debug:
+            self.camera.init_film_display()
         
         times_to_be_consistent_trackable_color = 0
         times_interval_end_time = None
@@ -238,6 +244,7 @@ class Robot:
                 # Mark the detected colors
                 self.camera.mark_the_detected_colors(frame, color_x, color_y, color_radius)
                 self.camera.result.write(frame)
+                self.camera.display_frame(frame)
                 
             # Consistent trackable color.
             if times_to_be_consistent_trackable_color < CameraModule.SERVOS_MOVEMENT_TIMES_DELAY:
