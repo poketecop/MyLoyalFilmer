@@ -39,8 +39,9 @@ ORANGE_COLOR_UPPER = np.array([25, 255, 255])
 VIDEO_WRITER_FOURCC = cv2.VideoWriter.fourcc('M', 'J', 'P', 'G')
 
 SERVOS_MOVEMENT_TRACKING_DELAY = 0.008
-SERVOS_MOVEMENT_TIMES_DELAY = 4
-MIN_COLOR_RADIUS_TO_TRACK = 10
+SERVOS_MOVEMENT_TIMES_DELAY = 5
+MIN_COLOR_WIDTH_TO_TRACK = 40
+MIN_COLOR_HEIGHT_TO_TRACK = 50
 
 X_RESOLUTION = 640
 Y_RESOLUTION = 480
@@ -50,8 +51,8 @@ X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 CENTER_X = X_RESOLUTION / 2
 CENTER_Y = Y_RESOLUTION / 2
 
-ACCEPTABLE_MARGIN_X = 50
-ACCEPTABLE_MARGIN_Y = ACCEPTABLE_MARGIN_X/X_Y_RESOLUTION_RELATION
+ACCEPTABLE_MARGIN_X = 120
+ACCEPTABLE_MARGIN_Y = ACCEPTABLE_MARGIN_X
 
 LEFT_ACCEPTABLE_X = CENTER_X - ACCEPTABLE_MARGIN_X
 RIGHT_ACCEPTABLE_X = CENTER_X + ACCEPTABLE_MARGIN_X
@@ -61,6 +62,8 @@ DOWN_ACCEPTABLE_Y = CENTER_Y + ACCEPTABLE_MARGIN_Y
 
 DEGREES_TO_MOVE_TO_TRACK_COLOR = 1
 DELAY_TO_TRACK_AFTER_MOVING = 0.2
+
+CONSISTENT_LOST_CONSECUTIVE_TIMES = 2
 
 class Camera:
 
@@ -198,14 +201,23 @@ class Camera:
         # frame = cv2.resize(frame, (300, 300))
         # Not used
         # frame_ = cv2.GaussianBlur(frame,(5,5),0) 
-        hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv,self.color_lower,self.color_upper)  
-        mask = cv2.erode(mask,None,iterations=2)
-        mask = cv2.dilate(mask,None,iterations=2)
-        mask = cv2.GaussianBlur(mask,(3,3),0)     
-        cnts = cv2.findContours(mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2]
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, self.color_lower, self.color_upper)  
+        mask = cv2.erode(mask, None, iterations=2)
+        mask = cv2.dilate(mask, None, iterations=2)
+        ret, mask = cv2.threshold(mask, 40, 255, 0)
+        cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2]
 
         return cnts
+
+    def get_outer_coordinates(self, cnts): 
+        # Get largest contour
+        c = max(cnts, key = cv2.contourArea)
+        # Get bounding box
+        x,y,w,h = cv2.boundingRect(c)
+       
+        return (x,y,w,h)
+
 
     def init_film_display(self):
         (frame_width, frame_height) = self.get_frame_size()
@@ -215,8 +227,8 @@ class Camera:
         self.image_widget = widgets.Image(format='jpeg', width=frame_width, height=frame_height)
         display(self.image_widget)
 
-    def mark_the_detected_colors(self, frame, color_x, color_y, color_radius):
-        cv2.circle(frame,(int(color_x),int(color_y)),int(color_radius),(255,0,255),2)
+    def mark_the_detected_colors(self, frame, color_x,color_y, color_width, color_height):
+        cv2.rectangle(frame,(color_x,color_y),(color_x+color_width,color_y+color_height),(0,255,0),2)
     
     def mirror_frame(self, frame):
         return cv2.flip(frame, 1)
@@ -243,20 +255,26 @@ class Camera:
 
         return (color_x,color_y), color_radius
 
-    def check_and_move_servos(self, color_x, color_y, color_radius, degrees):
+    def check_and_move_servos(self, color_x, color_y, color_width, color_height, degrees):
         moved = False
 
-        if color_x < LEFT_ACCEPTABLE_X:
+        center_x = color_x + color_width / 2
+        center_y = color_y + color_height / 2
+
+        print("\nCenter x: " + str(center_x))
+        print("\nCenter y: " + str(center_y))
+
+        if center_x < LEFT_ACCEPTABLE_X:
             self.camera_servos.move_anticlockwise(degrees)
             moved = True
-        elif color_x > RIGHT_ACCEPTABLE_X:
+        elif center_x > RIGHT_ACCEPTABLE_X:
             self.camera_servos.move_clockwise(degrees)
             moved = True
 
-        if color_y < UP_ACCEPTABLE_Y:
+        if center_y < UP_ACCEPTABLE_Y:
             self.camera_servos.move_up(degrees)
             moved = True
-        elif color_y > DOWN_ACCEPTABLE_Y:
+        elif center_y > DOWN_ACCEPTABLE_Y:
             self.camera_servos.move_down(degrees)
             moved = True
 

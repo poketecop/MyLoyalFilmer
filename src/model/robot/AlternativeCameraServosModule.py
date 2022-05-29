@@ -135,19 +135,13 @@ class AlternativeCameraServos:
         time.sleep(2)
 
         pos = 0
-        while pos < 180:
+        while pos < 100:
             self.servo_control(pos, pos)
             print(pos)
             pos = pos + 1
             time.sleep(0.1)
 
-        time.sleep(2)
-        pos = 180   
-        while pos > 0:
-            self.servo_control(pos, pos)
-            print(pos)
-            pos = pos - 1
-            time.sleep(0.1)
+        time.sleep(10)
 
     def move_clockwise(self, degrees):
         self.servo_control(self.current_x_servo_angle - degrees, self.current_y_servo_angle)
@@ -185,6 +179,9 @@ class AlternativeCameraServos:
         '''Move in the current direction.
         '''
         direction_x, direction_y = self.calc_current_direction()
+        if direction_x == DirectionX.NO_CHANGE and direction_y == DirectionY.NO_CHANGE:
+            return False
+
         if direction_x == DirectionX.CLOCKWISE:
             self.move_clockwise(degrees)
         elif direction_x == DirectionX.ANTICLOCKWISE:
@@ -194,4 +191,6 @@ class AlternativeCameraServos:
             self.move_up(degrees)
         elif direction_y == DirectionY.DOWN:
             self.move_down(degrees)
+
+        return True
         

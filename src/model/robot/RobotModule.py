@@ -213,6 +213,8 @@ class Robot:
         times_to_be_consistent_trackable_color = 0
         times_interval_end_time = None
         delay_to_track_after_moving_end_time = None
+
+        lost_consecutive_times = 0
         while time.time() < t_start + self.process_timeout:
             if self.camera.stop:
                 break
@@ -240,23 +242,33 @@ class Robot:
 
             if cnts_len <= 0:
                 times_to_be_consistent_trackable_color = 0
-                self.camera.camera_servos.move_in_current_direction(CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR)
-                delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
+
+                # lost_consecutive_times += 1
+                # if lost_consecutive_times >= CameraModule.CONSISTENT_LOST_CONSECUTIVE_TIMES:
+                #     if self.camera.camera_servos.move_in_current_direction(CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
+                #         delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
+                
                 continue
-
-            (color_x,color_y), color_radius = self.camera.get_colors_position_and_color_radius(cnts)
             
-            print('\nColor radius:' + str(color_radius))
+            color_x, color_y, color_width, color_height = self.camera.get_outer_coordinates(cnts)
 
-            if color_radius < CameraModule.MIN_COLOR_RADIUS_TO_TRACK:
+            print('\nColor x: ' + str(color_x) + ' y: ' + str(color_y) + ' width: ' + str(color_width) + ' height: ' + str(color_height))
+            
+            if color_width < CameraModule.MIN_COLOR_WIDTH_TO_TRACK or color_height < CameraModule.MIN_COLOR_HEIGHT_TO_TRACK:
                 times_to_be_consistent_trackable_color = 0
-                self.camera.camera_servos.move_in_current_direction(CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR)
-                delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
+                
+                # lost_consecutive_times += 1
+                # if lost_consecutive_times >= CameraModule.CONSISTENT_LOST_CONSECUTIVE_TIMES:
+                #     if self.camera.camera_servos.move_in_current_direction(CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
+                #         delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
+                
                 continue
-            
+
+            lost_consecutive_times = 0
+
             if self.debug:
                 # Mark the detected colors
-                self.camera.mark_the_detected_colors(frame, color_x, color_y, color_radius)
+                self.camera.mark_the_detected_colors(frame, color_x,color_y, color_width, color_height)
                 self.camera.result.write(frame)
                 self.camera.display_frame(frame)
                 
@@ -274,7 +286,7 @@ class Robot:
                     continue
 
                 # One less time to be a consistent trackable color.
-                times_to_be_consistent_trackable_color =  times_to_be_consistent_trackable_color +  1
+                times_to_be_consistent_trackable_color += 1
                 # Reset the interval.
                 times_interval_end_time = None
                 continue
@@ -283,7 +295,7 @@ class Robot:
             times_to_be_consistent_trackable_color = 0
             times_interval_end_time = None
             
-            if self.camera.check_and_move_servos(color_x, color_y, color_radius, CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
+            if self.camera.check_and_move_servos(color_x, color_y, color_width, color_height, CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
                 delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
 
         self.camera.finish_filming()
