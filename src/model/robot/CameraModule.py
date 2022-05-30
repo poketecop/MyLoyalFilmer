@@ -44,7 +44,7 @@ ORANGE_COLOR_UPPER = np.array([25, 255, 255])
 VIDEO_WRITER_FOURCC = cv2.VideoWriter.fourcc('M', 'J', 'P', 'G')
 
 SERVOS_MOVEMENT_TRACKING_DELAY = 0.008
-SERVOS_MOVEMENT_TIMES_DELAY = 2
+SERVOS_MOVEMENT_TIMES_DELAY = 1
 MIN_COLOR_WIDTH_TO_TRACK = 40
 MIN_COLOR_HEIGHT_TO_TRACK = 50
 
@@ -53,17 +53,15 @@ Y_RESOLUTION = 480
 
 X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 
-CENTER_X = X_RESOLUTION / 2
-CENTER_Y = Y_RESOLUTION / 2
+
+# Center x margin just in case.
+CENTER_X_MARGIN = 0
+# As the idea is to have a camera that can be used to track a color of a shirt,
+# center will be the center of the shirt, so we will add a margin to place de center below.
+CENTER_Y_MARGIN = 20
 
 ACCEPTABLE_MARGIN_X = 90
-ACCEPTABLE_MARGIN_Y = ACCEPTABLE_MARGIN_X
-
-LEFT_ACCEPTABLE_X = CENTER_X - ACCEPTABLE_MARGIN_X
-RIGHT_ACCEPTABLE_X = CENTER_X + ACCEPTABLE_MARGIN_X
-
-UP_ACCEPTABLE_Y = CENTER_Y - ACCEPTABLE_MARGIN_Y
-DOWN_ACCEPTABLE_Y = CENTER_Y + ACCEPTABLE_MARGIN_Y
+ACCEPTABLE_MARGIN_Y = 90
 
 DEGREES_TO_MOVE_TO_TRACK_COLOR = 1
 
@@ -74,32 +72,109 @@ CONSISTENT_LOST_CONSECUTIVE_TIMES = 2
 
 class Camera:
 
+    camera_servos = None
+    result = None
+    image = None
+    image_widget = None
+
+    # Above module constants will be stored in these properties 
+    # or the constructor parameter_list dicionary values instead.
     color_lower_1 = None
     color_upper_1 = None
     color_lower_2 = None
     color_upper_2 = None
-
-    camera_servos = None
-    result = None
-    image = None
     process_timeout = None
-    image_widget = None
+    servos_movement_tracking_delay = None
+    servos_movement_times_delay = None
+    min_color_width_to_track = None
+    min_color_height_to_track = None
+    center_x_margin = None
+    center_y_margin = None
+    center_x = None
+    center_y = None
+    acceptable_margin_x = None
+    acceptable_margin_y = None
+    left_acceptable_x = None
+    right_acceptable_x = None
+    up_acceptable_y = None
+    down_acceptable_y = None
+    degrees_to_move_to_track_color = None
+    delay_to_stop_after_moving = None
+    delay_to_track_after_moving = None
+    consistent_lost_consecutive_times = None
+    
 
     stop = False
 
-    def __init__(self, parameter_list, process_timeout, color_to_track = TrackableColor.RED.name, alternative_camera_servos = False):
+    def __init__(self, parameter_list, process_timeout, color_to_track = TrackableColor.RED.name, 
+        alternative_camera_servos = False, servos_movement_tracking_delay = SERVOS_MOVEMENT_TRACKING_DELAY, 
+        servos_movement_times_delay = SERVOS_MOVEMENT_TIMES_DELAY, min_color_width_to_track = MIN_COLOR_WIDTH_TO_TRACK, 
+        min_color_height_to_track = MIN_COLOR_HEIGHT_TO_TRACK, center_x_margin = CENTER_X_MARGIN, center_y_margin = CENTER_Y_MARGIN, 
+        acceptable_margin_x = ACCEPTABLE_MARGIN_X, acceptable_margin_y = ACCEPTABLE_MARGIN_Y, degrees_to_move_to_track_color = DEGREES_TO_MOVE_TO_TRACK_COLOR, 
+        delay_to_stop_after_moving = DELAY_TO_STOP_AFTER_MOVING, delay_to_track_after_moving = DELAY_TO_TRACK_AFTER_MOVING, 
+        consistent_lost_consecutive_times = CONSISTENT_LOST_CONSECUTIVE_TIMES):
+        ''' Uses module constants or parameter_list dictionary parameters to set self properties.
+        '''
         if 'color_to_track' in parameter_list:
             color_to_track = parameter_list['color_to_track']
         if 'alternative_camera_servos' in parameter_list:
             alternative_camera_servos = parameter_list['alternative_camera_servos'].lower() == 'yes'
+        if 'process_timeout' in parameter_list:
+            process_timeout = parameter_list['process_timeout']
+        if 'servos_movement_tracking_delay' in parameter_list:
+            servos_movement_tracking_delay = parameter_list['servos_movement_tracking_delay']
+        if 'servos_movement_times_delay' in parameter_list:
+            servos_movement_times_delay = parameter_list['servos_movement_times_delay']
+        if 'min_color_width_to_track' in parameter_list:
+            min_color_width_to_track = parameter_list['min_color_width_to_track']
+        if 'min_color_height_to_track' in parameter_list:
+            min_color_height_to_track = parameter_list['min_color_height_to_track']
+        if 'center_x_margin' in parameter_list:
+            center_x_margin = parameter_list['center_x_margin']
+        if 'center_y_margin' in parameter_list:
+            center_y_margin = parameter_list['center_y_margin']
+        if 'acceptable_margin_x' in parameter_list:
+            acceptable_margin_x = parameter_list['acceptable_margin_x']
+        if 'acceptable_margin_y' in parameter_list:
+            acceptable_margin_y = parameter_list['acceptable_margin_y']
+        if 'degrees_to_move_to_track_color' in parameter_list:
+            degrees_to_move_to_track_color = parameter_list['degrees_to_move_to_track_color']
+        if 'delay_to_stop_after_moving' in parameter_list:
+            delay_to_stop_after_moving = parameter_list['delay_to_stop_after_moving']
+        if 'delay_to_track_after_moving' in parameter_list:
+            delay_to_track_after_moving = parameter_list['delay_to_track_after_moving']
+        if 'consistent_lost_consecutive_times' in parameter_list:
+            consistent_lost_consecutive_times = parameter_list['consistent_lost_consecutive_times']
 
+        self.set_color_to_track(color_to_track)
         if alternative_camera_servos:
             self.camera_servos = AlternativeCameraServosModule.AlternativeCameraServos(parameter_list)
         else:
             self.camera_servos = CameraServosModule.CameraServos(parameter_list)
-
         self.process_timeout = process_timeout
-        self.set_color_to_track(color_to_track)
+        
+        self.servos_movement_tracking_delay = int(servos_movement_tracking_delay)
+        self.servos_movement_times_delay = int(servos_movement_times_delay)
+        self.min_color_width_to_track = int(min_color_width_to_track)
+        self.min_color_height_to_track = int(min_color_height_to_track)
+        self.center_x_margin = int(center_x_margin)
+        self.center_y_margin = int(center_y_margin)
+        self.acceptable_margin_x = int(acceptable_margin_x)
+        self.acceptable_margin_y = int(acceptable_margin_y)
+
+        self.center_x = X_RESOLUTION / 2 + self.center_x_margin
+        self.center_y = Y_RESOLUTION / 2 + self.center_y_margin
+
+        self.left_acceptable_x = self.center_x - self.acceptable_margin_x
+        self.right_acceptable_x = self.center_x + self.acceptable_margin_x
+
+        self.up_acceptable_y = self.center_y - self.acceptable_margin_y
+        self.down_acceptable_y = self.center_y + self.acceptable_margin_y
+
+        self.degrees_to_move_to_track_color = int(degrees_to_move_to_track_color)
+        self.delay_to_stop_after_moving = int(delay_to_stop_after_moving)
+        self.delay_to_track_after_moving = int(delay_to_track_after_moving)
+        self.consistent_lost_consecutive_times = int(consistent_lost_consecutive_times)
         
     def set_color_to_track(self, color_to_track):
         if color_to_track == TrackableColor.RED.name:
