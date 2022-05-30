@@ -110,6 +110,8 @@ class AlternativeCameraServos:
         else:
             self.previous_x_servo_angle = myangleA
 
+        print('\nCurrent servo pulse x: ' + str(self.current_x_servo_angle))
+        print('\nServo pulse x: ' + str(myangleA))
         self.current_x_servo_angle = myangleA
 
     def servo_pulse_y(self, myangleB):
@@ -120,7 +122,9 @@ class AlternativeCameraServos:
             self.previous_y_servo_angle = self.current_y_servo_angle
         else:
             self.previous_y_servo_angle = myangleB
-            
+        
+        print('\nCurrent servo pulse y: ' + str(self.current_y_servo_angle))
+        print('\nServo pulse y: ' + str(myangleB))
         self.current_y_servo_angle = myangleB
 
     def calc_duty_cycle(self, angle):
@@ -136,19 +140,17 @@ class AlternativeCameraServos:
         while pos < 180:
             self.servo_control(pos, pos)
             print(pos)
-            pos = pos + 1
-            time.sleep(0.1)
-
-        self.stop()
-
-        time.sleep(10)
+            pos = pos + 2
+            time.sleep(0.15)
+            self.stop()
 
         pos = 180   
         while pos > 0:
             self.servo_control(pos, pos)
             print(pos)
-            pos = pos - 1
-            time.sleep(0.1)
+            pos = pos - 2
+            time.sleep(0.15)
+            self.stop()
 
     def move_clockwise(self, degrees):
         print('\nMove clockwise: ' + str(degrees) + ' degrees.')

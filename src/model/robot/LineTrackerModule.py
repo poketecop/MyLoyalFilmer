@@ -4,7 +4,7 @@ import RPi.GPIO as GPIO
 import time
 
 CONSISTENT_CONSECUTIVE_TIMES = 1
-TRACK_LOST_CONSECUTIVE_TIMES = 20
+TRACK_LOST_CONSECUTIVE_TIMES = 200
 
 class LineTrackingOptions(Enum):
     EVERY_SENSOR_OVER_BLACK = 0
@@ -43,7 +43,7 @@ class LineTracker:
         GPIO.setup(TrackSensorRightPin1,GPIO.IN)
         GPIO.setup(TrackSensorRightPin2,GPIO.IN)
 
-        consecutive_tracking_option_times = 0
+        self.consecutive_tracking_option_times = 0
 
     def set_sensors_input_value(self):
         # When the black line is detected, the corresponding indicator of the tracking module is on, and the port level is LOW.

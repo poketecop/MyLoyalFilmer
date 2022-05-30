@@ -21,6 +21,7 @@ class Mode(Enum):
     CALIBRATE_CAMERA_SERVOS = 5
     TEST_CAMERA_SERVO_CONTROL = 7
     PRINT_PIXELS_PER_ANGLE = 8
+    TRACK_LINE_AND_TEST_CAMERA_SERVO_CONTROL = 9
 
 class Robot:
 
@@ -79,6 +80,8 @@ class Robot:
                 self.camera.camera_servos.test_servo_control()
             elif self.mode == Mode.PRINT_PIXELS_PER_ANGLE.name:
                 self.camera.print_pixels_per_angle()
+            elif self.mode == Mode.TRACK_LINE_AND_TEST_CAMERA_SERVO_CONTROL.name:
+                self.track_line_and_test_camera_servo_control()
             
         except Exception as error:
             print(error)
@@ -100,6 +103,16 @@ class Robot:
 
         self.track_line()
         self.camera.stop = True
+
+        while thread1.is_alive():
+            time.sleep(2)
+    
+    def track_line_and_test_camera_servo_control(self):
+        thread1 = threading.Thread(target = self.camera.camera_servos.test_servo_control)
+        thread1.setDaemon(True)
+        thread1.start()
+
+        self.track_line()
 
         while thread1.is_alive():
             time.sleep(2)
@@ -182,20 +195,15 @@ class Robot:
                     self.motors.run()
             else:
                 # When the every sensor is NOT over the black line, the car keeps the previous running state.
-                # Lost option independent from the rest.
                 if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
                     self.tracking_module.consecutive_tracking_option_times += 1
+
+                    if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.TRACK_LOST_CONSECUTIVE_TIMES:
+                        print('\nTrack lost')
+                        break
                 else:
                     self.tracking_module.consecutive_tracking_option_times = 0
                     self.tracking_module.current_tracking_option = LineTrackerModule.LineTrackingOptions.TRACK_LOST
-
-                if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.TRACK_LOST_CONSECUTIVE_TIMES:
-                    print('\nTrack lost')
-                    break
-
-                continue
-
-            self.tracking_module.consecutive_tracking_option_times = 0
         
         self.motors.soft_stop()
 
