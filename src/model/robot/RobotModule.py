@@ -19,7 +19,6 @@ class Mode(Enum):
     COLOR_TRACK = 3
     TRACK_LINE_AND_COLOR_TRACK = 4
     CALIBRATE_CAMERA_SERVOS = 5
-    TEST_COLOR_TRACK = 6
     TEST_CAMERA_SERVO_CONTROL = 7
     PRINT_PIXELS_PER_ANGLE = 8
 
@@ -76,8 +75,6 @@ class Robot:
                 self.track_line_and_color_track()
             elif self.mode == Mode.CALIBRATE_CAMERA_SERVOS.name:
                 self.camera.camera_servos.calibrate_servos()
-            elif self.mode == Mode.TEST_COLOR_TRACK.name:
-                self.test_color_track()
             elif self.mode == Mode.TEST_CAMERA_SERVO_CONTROL.name:
                 self.camera.camera_servos.test_servo_control()
             elif self.mode == Mode.PRINT_PIXELS_PER_ANGLE.name:
@@ -144,63 +141,61 @@ class Robot:
                     
                     if lap >= self.tracking_laps:
                         break
-                continue
-            if mark_lap:
+            elif mark_lap:
                 mark_lap = False
                 lap = lap + 1
             
             # Original conditions
             
             # Handle right acute angle and right right angle
-            if self.tracking_module.over_right_acute_angle_or_right_right_angle():
+            elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     # Turn right in place,speed is 100,delay 80ms
                     self.motors.sharp_right()
-                continue
     
             # Handle left acute angle and left right angle 
-            if self.tracking_module.over_left_acute_angle_and_left_right_angle():
+            elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     # Turn right in place,speed is 100,delay 80ms  
                     self.motors.sharp_left()
-                continue
     
             # Left_sensor1 detected black line
-            if self.tracking_module.left_sensor_1_detected_black_line():
+            elif self.tracking_module.left_sensor_1_detected_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     self.motors.spin_left()
-                continue
         
             # Right_sensor2 detected black line
-            if self.tracking_module.right_sensor2_detected_black_line():
+            elif self.tracking_module.right_sensor2_detected_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     self.motors.spin_right()
-                continue
     
-            if self.tracking_module.middle_right_sensor_misses_black_line():
+            elif self.tracking_module.middle_right_sensor_misses_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     self.motors.left()
     
             elif self.tracking_module.middle_left_sensor_misses_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     self.motors.right()
-                continue
 
-            if self.tracking_module.both_middle_sensors_over_black_line():
+            elif self.tracking_module.both_middle_sensors_over_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     self.motors.run()
-                continue
-                
-            # When the every sensor is NOT over the black line, the car keeps the previous running state.
-            if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
-                self.tracking_module.consecutive_tracking_option_times += 1
             else:
-                self.tracking_module.consecutive_tracking_option_times = 0
-                self.tracking_module.current_tracking_option = LineTrackerModule.LineTrackingOptions.TRACK_LOST
+                # When the every sensor is NOT over the black line, the car keeps the previous running state.
+                # Lost option independent from the rest.
+                if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
+                    self.tracking_module.consecutive_tracking_option_times += 1
+                else:
+                    self.tracking_module.consecutive_tracking_option_times = 0
+                    self.tracking_module.current_tracking_option = LineTrackerModule.LineTrackingOptions.TRACK_LOST
 
-            if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.TRACK_LOST_CONSECUTIVE_TIMES:
-                print('\nTrack lost')
-                break
+                if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.TRACK_LOST_CONSECUTIVE_TIMES:
+                    print('\nTrack lost')
+                    break
+
+                continue
+
+            self.tracking_module.consecutive_tracking_option_times = 0
         
         self.motors.soft_stop()
 
@@ -250,7 +245,7 @@ class Robot:
                 delay_to_stop_after_moving_end_time = None
                 self.camera.camera_servos.stop()
                 # Set delay to track after moving servos to avoid tracking while moving servos.
-                delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
+                delay_to_track_after_moving_end_time = time.perf_counter() + self.camera.delay_to_track_after_moving
 
             # Check delay to track after moving servos.
             if delay_to_track_after_moving_end_time:
@@ -269,9 +264,9 @@ class Robot:
                 times_to_be_consistent_trackable_color = 0
 
                 lost_consecutive_times += 1
-                if lost_consecutive_times >= CameraModule.CONSISTENT_LOST_CONSECUTIVE_TIMES:
-                    if self.camera.camera_servos.move_in_current_direction(CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
-                        delay_to_stop_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_STOP_AFTER_MOVING
+                if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
+                    if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
+                        delay_to_stop_after_moving_end_time = time.perf_counter() + self.camera.delay_to_stop_after_moving
                 
                 continue
             
@@ -285,24 +280,24 @@ class Robot:
                 self.camera.result.write(frame)
                 self.camera.display_frame(frame)
             
-            if color_width < CameraModule.MIN_COLOR_WIDTH_TO_TRACK or color_height < CameraModule.MIN_COLOR_HEIGHT_TO_TRACK:
+            if color_width < self.camera.min_color_width_to_track or color_height < self.camera.min_color_height_to_track:
                 times_to_be_consistent_trackable_color = 0
                 
                 lost_consecutive_times += 1
-                if lost_consecutive_times >= CameraModule.CONSISTENT_LOST_CONSECUTIVE_TIMES:
-                    if self.camera.camera_servos.move_in_current_direction(CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
-                        delay_to_stop_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_STOP_AFTER_MOVING
+                if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
+                    if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
+                        delay_to_stop_after_moving_end_time = time.perf_counter() + self.camera.delay_to_stop_after_moving
                 
                 continue
 
             lost_consecutive_times = 0
                 
             # Consistent trackable color.
-            if times_to_be_consistent_trackable_color < CameraModule.SERVOS_MOVEMENT_TIMES_DELAY:
+            if times_to_be_consistent_trackable_color < self.camera.servos_movement_times_delay:
                 # Can't use sleep if not necessary to keep capturing video
                 # So we will check intervals of SERVOS_MOVEMENT_TRACKING_DELAY until SERVOS_MOVEMENT_TIMES_DELAY times.
                 if not times_interval_end_time:
-                    times_interval_end_time = time.perf_counter() + CameraModule.SERVOS_MOVEMENT_TRACKING_DELAY
+                    times_interval_end_time = time.perf_counter() + self.camera.servos_movement_tracking_delay
                     # Calc for an interval.
                     continue
                 
@@ -320,52 +315,13 @@ class Robot:
             times_to_be_consistent_trackable_color = 0
             times_interval_end_time = None
             
-            if self.camera.check_and_move_servos(color_x, color_y, color_width, color_height, CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
+            if self.camera.check_and_move_servos(color_x, color_y, color_width, color_height, self.camera.degrees_to_move_to_track_color):
                 # Set a checking delay (execution not freezed), to give the servos time to move before stopping.
-                delay_to_stop_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_STOP_AFTER_MOVING
+                delay_to_stop_after_moving_end_time = time.perf_counter() + self.camera.delay_to_stop_after_moving
 
         self.camera.finish_filming()
         
         return 0
-
-    def test_color_track(self):
-        print('\n Entered color_track method.')
-
-        self.camera.init_film_capture()
-        self.camera.init_film_display()
-        self.camera.init_film_saving()
-        
-        i = 0
-
-        while i < 3:
-            ret, frame = self.camera.image.read()
-
-            if not ret:
-                # Break the loop
-                break
-
-            # Write the frame into the
-            # file 'filename.avi'
-            self.camera.result.write(frame)
-
-            cnts = self.camera.get_color_countours(frame)
-
-            cnts_len = len(cnts)
-            print('\nCountours: ' + str(cnts_len))
-
-            if cnts_len > 0:
-                (color_x,color_y), color_radius = self.camera.get_colors_position_and_color_radius(cnts)                
-                print('\nColor radius:' + str(color_radius))
-
-                if color_radius > CameraModule.MIN_COLOR_RADIUS_TO_TRACK:
-                    # Mark the detected colors
-                    self.camera.mark_the_detected_colors(frame, color_x, color_y, color_radius)
-            
-            self.camera.display_frame(frame)
-
-            i = self.chech_test_position(color_x, color_y, i)
-           
-        self.camera.finish_filming()
 
     def chech_test_position(self, color_x, color_y, i):
         print('\n¿Are you in the desired' + str(i) + ' test position? Y/N:N')

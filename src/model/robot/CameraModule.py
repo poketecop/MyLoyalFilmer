@@ -323,22 +323,6 @@ class Camera:
     def mirror_frame(self, frame):
         return cv2.flip(frame, 1)
 
-    def get_target_angles(self, color_x, color_y):
-        target_angle_x = self.calc_target_angle_x(self.camera_servos.current_x_servo_angle, color_x)
-        target_angle_y = self.calc_target_angle_y(self.camera_servos.current_y_servo_angle, color_y)
-
-        return target_angle_x, target_angle_y
-
-    def calc_target_angle_x(self, current_x_angle, target_dot_x, current_x_angle_dot = CENTER_X):
-        ''' Calc target value with a rule of three between current_x_angle, target_dot_x and current_x_angle_dot
-        '''
-        return int(current_x_angle * (target_dot_x / current_x_angle_dot))
-
-    def calc_target_angle_y(self, current_y_angle, target_dot_y, current_y_angle_dot = CENTER_Y):
-        ''' Calc target value with a rule of three between current_y_angle, target_dot_y and current_y_angle_dot
-        '''
-        return int(current_y_angle * (target_dot_y / current_y_angle_dot))
-
     def get_colors_position_and_color_radius(self, cnts):
         cnt = max (cnts, key = cv2.contourArea)
         (color_x,color_y), color_radius = cv2.minEnclosingCircle(cnt)
@@ -354,17 +338,17 @@ class Camera:
         print("\nCenter x: " + str(center_x))
         print("\nCenter y: " + str(center_y))
 
-        if center_x < LEFT_ACCEPTABLE_X:
+        if center_x < self.left_acceptable_x:
             self.camera_servos.move_anticlockwise(degrees)
             moved = True
-        elif center_x > RIGHT_ACCEPTABLE_X:
+        elif center_x > self.right_acceptable_x:
             self.camera_servos.move_clockwise(degrees)
             moved = True
 
-        if center_y < UP_ACCEPTABLE_Y:
+        if center_y < self.up_acceptable_y:
             self.camera_servos.move_up(degrees)
             moved = True
-        elif center_y > DOWN_ACCEPTABLE_Y:
+        elif center_y > self.down_acceptable_y:
             self.camera_servos.move_down(degrees)
             moved = True
 
