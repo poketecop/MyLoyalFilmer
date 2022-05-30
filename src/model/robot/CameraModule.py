@@ -44,7 +44,7 @@ ORANGE_COLOR_UPPER = np.array([25, 255, 255])
 VIDEO_WRITER_FOURCC = cv2.VideoWriter.fourcc('M', 'J', 'P', 'G')
 
 SERVOS_MOVEMENT_TRACKING_DELAY = 0.008
-SERVOS_MOVEMENT_TIMES_DELAY = 5
+SERVOS_MOVEMENT_TIMES_DELAY = 2
 MIN_COLOR_WIDTH_TO_TRACK = 40
 MIN_COLOR_HEIGHT_TO_TRACK = 50
 
@@ -56,7 +56,7 @@ X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 CENTER_X = X_RESOLUTION / 2
 CENTER_Y = Y_RESOLUTION / 2
 
-ACCEPTABLE_MARGIN_X = 120
+ACCEPTABLE_MARGIN_X = 90
 ACCEPTABLE_MARGIN_Y = ACCEPTABLE_MARGIN_X
 
 LEFT_ACCEPTABLE_X = CENTER_X - ACCEPTABLE_MARGIN_X
@@ -67,8 +67,8 @@ DOWN_ACCEPTABLE_Y = CENTER_Y + ACCEPTABLE_MARGIN_Y
 
 DEGREES_TO_MOVE_TO_TRACK_COLOR = 1
 
-DELAY_TO_STOP_AFTER_MOVING = 0.1
-DELAY_TO_TRACK_AFTER_MOVING = 0.2
+DELAY_TO_STOP_AFTER_MOVING = 0.15
+DELAY_TO_TRACK_AFTER_MOVING = 0.1
 
 CONSISTENT_LOST_CONSECUTIVE_TIMES = 2
 
@@ -217,7 +217,7 @@ class Camera:
         lower_mask = cv2.inRange(hsv, self.color_lower_1, self.color_upper_1)
         upper_mask = cv2.inRange(hsv, self.color_lower_2, self.color_upper_2)
         full_mask = lower_mask + upper_mask
-        
+
         full_mask = cv2.erode(full_mask, None, iterations=2)
         full_mask = cv2.dilate(full_mask, None, iterations=2)
         full_mask = cv2.GaussianBlur(full_mask,(3,3),0)

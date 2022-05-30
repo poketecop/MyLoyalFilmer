@@ -151,15 +151,19 @@ class AlternativeCameraServos:
             time.sleep(0.1)
 
     def move_clockwise(self, degrees):
+        print('\nMove clockwise: ' + str(degrees) + ' degrees.')
         self.servo_control(self.current_x_servo_angle - degrees, self.current_y_servo_angle)
 
     def move_anticlockwise(self, degrees):
+        print('\nMove anticlockwise: ' + str(degrees) + ' degrees.')
         self.servo_control(self.current_x_servo_angle + degrees, self.current_y_servo_angle)
 
     def move_up(self, degrees):
+        print('\nMove up: ' + str(degrees) + ' degrees.')
         self.servo_control(self.current_x_servo_angle, self.current_y_servo_angle + degrees)
 
     def move_down(self, degrees):
+        print('\nMove down: ' + str(degrees) + ' degrees.')
         self.servo_control(self.current_x_servo_angle, self.current_y_servo_angle - degrees)
 
     def calc_current_direction(self):

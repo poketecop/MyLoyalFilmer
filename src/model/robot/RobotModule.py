@@ -144,45 +144,52 @@ class Robot:
                     
                     if lap >= self.tracking_laps:
                         break
-            elif mark_lap:
+                continue
+            if mark_lap:
                 mark_lap = False
                 lap = lap + 1
             
             # Original conditions
             
             # Handle right acute angle and right right angle
-            elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
+            if self.tracking_module.over_right_acute_angle_or_right_right_angle():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     # Turn right in place,speed is 100,delay 80ms
                     self.motors.sharp_right()
+                continue
     
             # Handle left acute angle and left right angle 
-            elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
+            if self.tracking_module.over_left_acute_angle_and_left_right_angle():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     # Turn right in place,speed is 100,delay 80ms  
                     self.motors.sharp_left()
+                continue
     
             # Left_sensor1 detected black line
-            elif self.tracking_module.left_sensor_1_detected_black_line():
+            if self.tracking_module.left_sensor_1_detected_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     self.motors.spin_left()
+                continue
         
             # Right_sensor2 detected black line
-            elif self.tracking_module.right_sensor2_detected_black_line():
+            if self.tracking_module.right_sensor2_detected_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     self.motors.spin_right()
+                continue
     
-            elif self.tracking_module.middle_right_sensor_misses_black_line():
+            if self.tracking_module.middle_right_sensor_misses_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     self.motors.left()
     
             elif self.tracking_module.middle_left_sensor_misses_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     self.motors.right()
+                continue
 
-            elif self.tracking_module.both_middle_sensors_over_black_line():
+            if self.tracking_module.both_middle_sensors_over_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
                     self.motors.run()
+                continue
                 
             # When the every sensor is NOT over the black line, the car keeps the previous running state.
             if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
@@ -261,10 +268,10 @@ class Robot:
             if cnts_len <= 0:
                 times_to_be_consistent_trackable_color = 0
 
-                # lost_consecutive_times += 1
-                # if lost_consecutive_times >= CameraModule.CONSISTENT_LOST_CONSECUTIVE_TIMES:
-                #     if self.camera.camera_servos.move_in_current_direction(CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
-                #         delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
+                lost_consecutive_times += 1
+                if lost_consecutive_times >= CameraModule.CONSISTENT_LOST_CONSECUTIVE_TIMES:
+                    if self.camera.camera_servos.move_in_current_direction(CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
+                        delay_to_stop_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_STOP_AFTER_MOVING
                 
                 continue
             
@@ -281,10 +288,10 @@ class Robot:
             if color_width < CameraModule.MIN_COLOR_WIDTH_TO_TRACK or color_height < CameraModule.MIN_COLOR_HEIGHT_TO_TRACK:
                 times_to_be_consistent_trackable_color = 0
                 
-                # lost_consecutive_times += 1
-                # if lost_consecutive_times >= CameraModule.CONSISTENT_LOST_CONSECUTIVE_TIMES:
-                #     if self.camera.camera_servos.move_in_current_direction(CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
-                #         delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
+                lost_consecutive_times += 1
+                if lost_consecutive_times >= CameraModule.CONSISTENT_LOST_CONSECUTIVE_TIMES:
+                    if self.camera.camera_servos.move_in_current_direction(CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
+                        delay_to_stop_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_STOP_AFTER_MOVING
                 
                 continue
 
