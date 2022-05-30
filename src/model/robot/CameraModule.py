@@ -20,9 +20,14 @@ class TrackableColor(Enum):
     BLUE = 3
     YELLOW = 4
     ORANGE = 5
-    
-RED_COLOR_LOWER = np.array([0, 43, 46])
-RED_COLOR_UPPER = np.array([10, 255, 255])
+
+# lower boundary RED color range values; Hue (0 - 10)
+RED_COLOR_LOWER_1 = np.array([0, 100, 20])
+RED_COLOR_UPPER_1 = np.array([10, 255, 255])
+ 
+# upper boundary RED color range values; Hue (160 - 180)
+RED_COLOR_LOWER_2 = np.array([160,100,20])
+RED_COLOR_UPPER_2 = np.array([179,255,255])
 
 GREEN_COLOR_LOWER = np.array([35, 43, 46])
 GREEN_COLOR_UPPER = np.array([77, 255, 255])
@@ -61,14 +66,19 @@ UP_ACCEPTABLE_Y = CENTER_Y - ACCEPTABLE_MARGIN_Y
 DOWN_ACCEPTABLE_Y = CENTER_Y + ACCEPTABLE_MARGIN_Y
 
 DEGREES_TO_MOVE_TO_TRACK_COLOR = 1
+
+DELAY_TO_STOP_AFTER_MOVING = 0.1
 DELAY_TO_TRACK_AFTER_MOVING = 0.2
 
 CONSISTENT_LOST_CONSECUTIVE_TIMES = 2
 
 class Camera:
 
-    color_lower = None
-    color_upper = None
+    color_lower_1 = None
+    color_upper_1 = None
+    color_lower_2 = None
+    color_upper_2 = None
+
     camera_servos = None
     result = None
     image = None
@@ -93,20 +103,22 @@ class Camera:
         
     def set_color_to_track(self, color_to_track):
         if color_to_track == TrackableColor.RED.name:
-            self.color_lower = RED_COLOR_LOWER
-            self.color_upper = RED_COLOR_UPPER
+            self.color_lower_1 = RED_COLOR_LOWER_1
+            self.color_upper_1 = RED_COLOR_UPPER_1
+            self.color_lower_2 = RED_COLOR_LOWER_2
+            self.color_upper_2 = RED_COLOR_UPPER_2
         elif color_to_track == TrackableColor.GREEN.name:
-            self.color_lower = GREEN_COLOR_LOWER
-            self.color_upper = GREEN_COLOR_UPPER
+            self.color_lower_1 = GREEN_COLOR_LOWER
+            self.color_upper_1 = GREEN_COLOR_UPPER
         elif color_to_track == TrackableColor.BLUE.name:
-            self.color_lower = BLUE_COLOR_LOWER
-            self.color_upper = BLUE_COLOR_UPPER
+            self.color_lower_1 = BLUE_COLOR_LOWER
+            self.color_upper_1 = BLUE_COLOR_UPPER
         elif color_to_track == TrackableColor.YELLOW.name:
-            self.color_lower = YELLOW_COLOR_LOWER
-            self.color_upper = YELLOW_COLOR_UPPER
+            self.color_lower_1 = YELLOW_COLOR_LOWER
+            self.color_upper_1 = YELLOW_COLOR_UPPER
         elif color_to_track == TrackableColor.ORANGE.name:
-            self.color_lower = ORANGE_COLOR_LOWER
-            self.color_upper = ORANGE_COLOR_UPPER
+            self.color_lower_1 = ORANGE_COLOR_LOWER
+            self.color_upper_1 = ORANGE_COLOR_UPPER
     
     def display_frame(self, frame):
         self.image_widget.value = self.bgr8_to_jpeg(frame)
@@ -200,13 +212,16 @@ class Camera:
     def get_color_countours(self, frame):
         # frame = cv2.resize(frame, (300, 300))
         # Not used
-        # frame_ = cv2.GaussianBlur(frame,(5,5),0) 
+        frame_ = cv2.GaussianBlur(frame,(5,5),0)
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv, self.color_lower, self.color_upper)  
-        mask = cv2.erode(mask, None, iterations=2)
-        mask = cv2.dilate(mask, None, iterations=2)
-        ret, mask = cv2.threshold(mask, 40, 255, 0)
-        cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2]
+        lower_mask = cv2.inRange(hsv, self.color_lower_1, self.color_upper_1)
+        upper_mask = cv2.inRange(hsv, self.color_lower_2, self.color_upper_2)
+        full_mask = lower_mask + upper_mask
+        
+        full_mask = cv2.erode(full_mask, None, iterations=2)
+        full_mask = cv2.dilate(full_mask, None, iterations=2)
+        full_mask = cv2.GaussianBlur(full_mask,(3,3),0)
+        cnts = cv2.findContours(full_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2]
 
         return cnts
 

@@ -7,6 +7,7 @@ import time
 from model.robot import CameraModule
 from model.robot.Motors import Motors
 from model.robot import LineTrackerModule
+import traceback
 
 DEFAULT_PROCESS_TIMEOUT = 10
 DEFAULT_INITIAL_DELAY = 2
@@ -84,6 +85,7 @@ class Robot:
             
         except Exception as error:
             print(error)
+            print('\n\n' + traceback.format_exc())
         finally:
             GPIO.cleanup()
     
@@ -212,6 +214,7 @@ class Robot:
         
         times_to_be_consistent_trackable_color = 0
         times_interval_end_time = None
+        delay_to_stop_after_moving_end_time = None
         delay_to_track_after_moving_end_time = None
 
         lost_consecutive_times = 0
@@ -230,9 +233,24 @@ class Robot:
             if not self.debug:
                 self.camera.result.write(frame)
             
+            # Check delay to stop after moving servos.
+            if delay_to_stop_after_moving_end_time:
+                if time.perf_counter() < delay_to_stop_after_moving_end_time:
+                    # Keep waiting
+                    continue
+
+                # Waiting finish. Reset the time.
+                delay_to_stop_after_moving_end_time = None
+                self.camera.camera_servos.stop()
+                # Set delay to track after moving servos to avoid tracking while moving servos.
+                delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
+
+            # Check delay to track after moving servos.
             if delay_to_track_after_moving_end_time:
                 if time.perf_counter() < delay_to_track_after_moving_end_time:
+                    # Keep waiting
                     continue
+                # Waiting finish. Reset the time.
                 delay_to_track_after_moving_end_time = None
 
             cnts = self.camera.get_color_countours(frame)
@@ -254,6 +272,12 @@ class Robot:
 
             print('\nColor x: ' + str(color_x) + ' y: ' + str(color_y) + ' width: ' + str(color_width) + ' height: ' + str(color_height))
             
+            if self.debug:
+                # Mark the detected colors
+                self.camera.mark_the_detected_colors(frame, color_x,color_y, color_width, color_height)
+                self.camera.result.write(frame)
+                self.camera.display_frame(frame)
+            
             if color_width < CameraModule.MIN_COLOR_WIDTH_TO_TRACK or color_height < CameraModule.MIN_COLOR_HEIGHT_TO_TRACK:
                 times_to_be_consistent_trackable_color = 0
                 
@@ -265,12 +289,6 @@ class Robot:
                 continue
 
             lost_consecutive_times = 0
-
-            if self.debug:
-                # Mark the detected colors
-                self.camera.mark_the_detected_colors(frame, color_x,color_y, color_width, color_height)
-                self.camera.result.write(frame)
-                self.camera.display_frame(frame)
                 
             # Consistent trackable color.
             if times_to_be_consistent_trackable_color < CameraModule.SERVOS_MOVEMENT_TIMES_DELAY:
@@ -296,7 +314,8 @@ class Robot:
             times_interval_end_time = None
             
             if self.camera.check_and_move_servos(color_x, color_y, color_width, color_height, CameraModule.DEGREES_TO_MOVE_TO_TRACK_COLOR):
-                delay_to_track_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_TRACK_AFTER_MOVING
+                # Set a checking delay (execution not freezed), to give the servos time to move before stopping.
+                delay_to_stop_after_moving_end_time = time.perf_counter() + CameraModule.DELAY_TO_STOP_AFTER_MOVING
 
         self.camera.finish_filming()
         

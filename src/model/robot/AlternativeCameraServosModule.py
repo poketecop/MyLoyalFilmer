@@ -46,14 +46,6 @@ class AlternativeCameraServos:
         
         if 'initial_y_servo_angle' in parameter_list:
             initial_y_servo_angle = int(parameter_list['initial_y_servo_angle'])
-        
-        # Current servo angles initial values are centered.
-        self.current_x_servo_angle = DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE
-        self.current_y_servo_angle = DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE
-
-        # Initially, previous angles and current angles are the same.
-        self.previous_x_servo_angle = self.current_x_servo_angle
-        self.previous_y_servo_angle = self.current_y_servo_angle
 
         self.initial_x_servo_angle = initial_x_servo_angle
         self.initial_y_servo_angle = initial_y_servo_angle
@@ -68,12 +60,10 @@ class AlternativeCameraServos:
 
     def init_servos_position(self):
         self.servo_control(DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE, DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE)
-        time.sleep(2)
+        time.sleep(1)
         self.servo_control(self.initial_x_servo_angle, self.initial_y_servo_angle)
-
-        # Initially, previous angles and current angles are the same.
-        self.previous_x_servo_angle = self.current_x_servo_angle
-        self.previous_y_servo_angle = self.current_y_servo_angle
+        time.sleep(1)
+        self.stop()
 
         print('\nServos initial position set.')
 
@@ -115,14 +105,22 @@ class AlternativeCameraServos:
         duty = self.calc_duty_cycle(myangleA)
         self.pwm_x.ChangeDutyCycle(duty)
         # Save the current angle as previous angle.
-        self.previous_x_servo_angle = self.current_x_servo_angle
+        if self.current_x_servo_angle != None:
+            self.previous_x_servo_angle = self.current_x_servo_angle
+        else:
+            self.previous_x_servo_angle = myangleA
+
         self.current_x_servo_angle = myangleA
 
     def servo_pulse_y(self, myangleB):
         duty = self.calc_duty_cycle(myangleB)
         self.pwm_y.ChangeDutyCycle(duty)
         # Save the current angle as previous angle.
-        self.previous_y_servo_angle = self.current_y_servo_angle
+        if self.current_y_servo_angle != None:
+            self.previous_y_servo_angle = self.current_y_servo_angle
+        else:
+            self.previous_y_servo_angle = myangleB
+            
         self.current_y_servo_angle = myangleB
 
     def calc_duty_cycle(self, angle):
@@ -135,13 +133,22 @@ class AlternativeCameraServos:
         time.sleep(2)
 
         pos = 0
-        while pos < 100:
+        while pos < 180:
             self.servo_control(pos, pos)
             print(pos)
             pos = pos + 1
             time.sleep(0.1)
 
+        self.stop()
+
         time.sleep(10)
+
+        pos = 180   
+        while pos > 0:
+            self.servo_control(pos, pos)
+            print(pos)
+            pos = pos - 1
+            time.sleep(0.1)
 
     def move_clockwise(self, degrees):
         self.servo_control(self.current_x_servo_angle - degrees, self.current_y_servo_angle)
@@ -193,4 +200,10 @@ class AlternativeCameraServos:
             self.move_down(degrees)
 
         return True
+
+    def stop(self):
+        '''Set duty cycle to 0.
+        '''
+        self.pwm_x.ChangeDutyCycle(0)
+        self.pwm_y.ChangeDutyCycle(0)
         

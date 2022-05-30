@@ -249,6 +249,9 @@ class CameraServos:
 
     def move_in_current_direction(self, degrees):
         raise NotImplementedError
+
+    def stop(self):
+        raise NotImplementedError
     
 
             
