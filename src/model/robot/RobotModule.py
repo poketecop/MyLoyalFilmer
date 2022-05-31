@@ -42,21 +42,21 @@ class Robot:
                 mode = parameter_list['mode']
             
             if 'process_timeout' in parameter_list:
-                process_timeout = int(parameter_list['process_timeout'])
+                process_timeout = parameter_list['process_timeout']
             
             if 'initial_delay' in parameter_list:
-                initial_delay = int(parameter_list['initial_delay'])
+                initial_delay = parameter_list['initial_delay']
 
             if 'tracking_laps' in parameter_list:
-                tracking_laps = int(parameter_list['tracking_laps'])
+                tracking_laps = parameter_list['tracking_laps']
 
             if 'debug' in parameter_list:
                 debug = parameter_list['debug'].lower() == 'yes'
         
         self.init_pin_numbering_mode()
-        self.process_timeout = process_timeout
-        self.initial_delay = initial_delay
-        self.tracking_laps = tracking_laps
+        self.process_timeout = int(process_timeout)
+        self.initial_delay = int(initial_delay)
+        self.tracking_laps = int(tracking_laps)
         self.mode = mode
         self.debug = debug
 
@@ -197,8 +197,13 @@ class Robot:
                 # When the every sensor is NOT over the black line, the car keeps the previous running state.
                 if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
                     self.tracking_module.consecutive_tracking_option_times += 1
-
+                   
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
+                        # Print consecutive_tracking_option_times
+                        print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
+                        # Print track_lost_consecutive_times
+                        print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
+
                         print('\nTrack lost')
                         break
                 else:
@@ -243,24 +248,38 @@ class Robot:
             if not self.debug:
                 self.camera.result.write(frame)
             
+            current_accurate_time = time.perf_counter()
+
             # Check delay to stop after moving servos.
             if delay_to_stop_after_moving_end_time:
-                if time.perf_counter() < delay_to_stop_after_moving_end_time:
+                # Print current_accurate_time
+                print('\nCurrent time: ' + str(current_accurate_time))
+                # Print delay_to_stop_after_moving_end_time
+                print('\nDelay to stop after moving end time: ' + str(delay_to_stop_after_moving_end_time))
+                if current_accurate_time < delay_to_stop_after_moving_end_time:
                     # Keep waiting
+                    print('\nWaiting for delay to stop after moving.')
                     continue
 
                 # Waiting finish. Reset the time.
+                print('\nDelay to stop after moving finish.')
                 delay_to_stop_after_moving_end_time = None
                 self.camera.camera_servos.stop()
                 # Set delay to track after moving servos to avoid tracking while moving servos.
-                delay_to_track_after_moving_end_time = time.perf_counter() + self.camera.delay_to_track_after_moving
+                delay_to_track_after_moving_end_time = current_accurate_time + self.camera.delay_to_track_after_moving
 
             # Check delay to track after moving servos.
             if delay_to_track_after_moving_end_time:
-                if time.perf_counter() < delay_to_track_after_moving_end_time:
+                # Print current_accurate_time
+                print('\nCurrent time: ' + str(current_accurate_time))
+                # Print delay_to_track_after_moving_end_time
+                print('\nDelay to track after moving end time: ' + str(delay_to_track_after_moving_end_time))
+                if current_accurate_time < delay_to_track_after_moving_end_time:
                     # Keep waiting
+                    print('\nWaiting for delay to track after moving.')
                     continue
                 # Waiting finish. Reset the time.
+                print('\nDelay to track after moving finish.')
                 delay_to_track_after_moving_end_time = None
 
             cnts = self.camera.get_color_countours(frame)

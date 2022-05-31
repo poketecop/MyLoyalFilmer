@@ -3,6 +3,8 @@ from enum import Enum
 import RPi.GPIO as GPIO
 import time
 
+from model.utils.RobotUtil import sleep
+
 SERVO_PIN = 11  #S2
 SERVO_PIN_B = 9  #S3
 fPWM = 50  # Hz (not higher with software PWM)
@@ -12,8 +14,10 @@ b = 2
 DEFAULT_INITIAL_CENTERED_X_SERVO_ANGLE = 90
 DEFAULT_INITIAL_CENTERED_Y_SERVO_ANGLE = 90
 
-ANGLE_SAFE_MARGIN_X = 5
-ANGLE_SAFE_MARGIN_Y = 5
+# If motors are not running this has to be positive as limits force servos.
+# But while motors are running it is better to have a negative margin.
+ANGLE_SAFE_MARGIN_X = -10
+ANGLE_SAFE_MARGIN_Y = -10
 
 class DirectionX(Enum):
     NO_CHANGE = 0
@@ -48,8 +52,8 @@ class AlternativeCameraServos:
             if 'initial_y_servo_angle' in parameter_list:
                 initial_y_servo_angle = int(parameter_list['initial_y_servo_angle'])
 
-        self.initial_x_servo_angle = initial_x_servo_angle
-        self.initial_y_servo_angle = initial_y_servo_angle
+        self.initial_x_servo_angle = int(initial_x_servo_angle)
+        self.initial_y_servo_angle = int(initial_y_servo_angle)
 
         GPIO.setup(SERVO_PIN, GPIO.OUT)
         self.pwm_x = GPIO.PWM(SERVO_PIN, fPWM)
@@ -142,16 +146,18 @@ class AlternativeCameraServos:
             self.servo_control(pos, pos)
             print(pos)
             pos = pos + 2
-            time.sleep(0.15)
+            sleep(0.15)
             self.stop()
+            sleep(0.15)
 
         pos = 180   
         while pos > 0:
             self.servo_control(pos, pos)
             print(pos)
             pos = pos - 2
-            time.sleep(0.15)
+            sleep(0.15)
             self.stop()
+            sleep(0.15)
 
     def move_clockwise(self, degrees):
         print('\nMove clockwise: ' + str(degrees) + ' degrees.')

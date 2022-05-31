@@ -4,7 +4,7 @@ import RPi.GPIO as GPIO
 import time
 
 CONSISTENT_CONSECUTIVE_TIMES = 1
-TRACK_LOST_CONSECUTIVE_TIMES = 500
+TRACK_LOST_CONSECUTIVE_TIMES = 100000
 
 class LineTrackingOptions(Enum):
     EVERY_SENSOR_OVER_BLACK = 0
@@ -48,8 +48,8 @@ class LineTracker:
                 track_lost_consecutive_times = parameter_list['track_lost_consecutive_times']
         
         self.consecutive_tracking_option_times = 0
-        self.consistent_consecutive_times = consistent_consecutive_times
-        self.track_lost_consecutive_times = track_lost_consecutive_times
+        self.consistent_consecutive_times = int(consistent_consecutive_times)
+        self.track_lost_consecutive_times = int(track_lost_consecutive_times)
         
         GPIO.setup(TrackSensorLeftPin1,GPIO.IN)
         GPIO.setup(TrackSensorLeftPin2,GPIO.IN)

@@ -63,10 +63,12 @@ CENTER_Y_MARGIN = 20
 ACCEPTABLE_MARGIN_X = 90
 ACCEPTABLE_MARGIN_Y = 90
 
-DEGREES_TO_MOVE_TO_TRACK_COLOR = 2
+# For some reason, while motors are running, degrees become less degrees.
+# Testing, 10 seemed to work better than 15 for instance.
+DEGREES_TO_MOVE_TO_TRACK_COLOR = 10
 
 DELAY_TO_STOP_AFTER_MOVING = 0.15
-DELAY_TO_TRACK_AFTER_MOVING = 0.1
+DELAY_TO_TRACK_AFTER_MOVING = 0.05
 
 CONSISTENT_LOST_CONSECUTIVE_TIMES = 2
 
@@ -154,7 +156,7 @@ class Camera:
             self.camera_servos = CameraServosModule.CameraServos(parameter_list)
         self.process_timeout = process_timeout
         
-        self.servos_movement_tracking_delay = int(servos_movement_tracking_delay)
+        self.servos_movement_tracking_delay = float(servos_movement_tracking_delay)
         self.servos_movement_times_delay = int(servos_movement_times_delay)
         self.min_color_width_to_track = int(min_color_width_to_track)
         self.min_color_height_to_track = int(min_color_height_to_track)
@@ -173,8 +175,8 @@ class Camera:
         self.down_acceptable_y = self.center_y + self.acceptable_margin_y
 
         self.degrees_to_move_to_track_color = int(degrees_to_move_to_track_color)
-        self.delay_to_stop_after_moving = int(delay_to_stop_after_moving)
-        self.delay_to_track_after_moving = int(delay_to_track_after_moving)
+        self.delay_to_stop_after_moving = float(delay_to_stop_after_moving)
+        self.delay_to_track_after_moving = float(delay_to_track_after_moving)
         self.consistent_lost_consecutive_times = int(consistent_lost_consecutive_times)
         
     def set_color_to_track(self, color_to_track):
