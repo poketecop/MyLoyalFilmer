@@ -10,9 +10,9 @@ from datetime import datetime as dt
 
 import ipywidgets.widgets as widgets
 from IPython.display import display
-from model.robot import AlternativeCameraServosModule
+from model.robot import CameraServosModule
 
-from model.robot.AlternativeCameraServosModule import AlternativeCameraServos
+from model.robot.CameraServosModule import CameraServos
 
 class TrackableColor(Enum):
     RED = 1
@@ -123,8 +123,7 @@ class Camera:
 
     stop = False
 
-    def __init__(self, parameter_list, process_timeout, color_to_track = TrackableColor.RED.name, 
-        alternative_camera_servos = False, servos_movement_tracking_delay = SERVOS_MOVEMENT_TRACKING_DELAY, 
+    def __init__(self, parameter_list, process_timeout, color_to_track = TrackableColor.RED.name, servos_movement_tracking_delay = SERVOS_MOVEMENT_TRACKING_DELAY, 
         servos_movement_times_delay = SERVOS_MOVEMENT_TIMES_DELAY, min_color_width_to_track = MIN_COLOR_WIDTH_TO_TRACK, 
         min_color_height_to_track = MIN_COLOR_HEIGHT_TO_TRACK, center_x_margin = CENTER_X_MARGIN, center_y_margin = CENTER_Y_MARGIN, 
         acceptable_margin_x = ACCEPTABLE_MARGIN_X, acceptable_margin_y = ACCEPTABLE_MARGIN_Y, degrees_to_move_to_track_color = DEGREES_TO_MOVE_TO_TRACK_COLOR, 
@@ -136,8 +135,6 @@ class Camera:
         if parameter_list:            
             if 'color_to_track' in parameter_list:
                 color_to_track = parameter_list['color_to_track']
-            if 'alternative_camera_servos' in parameter_list:
-                alternative_camera_servos = parameter_list['alternative_camera_servos'].lower() == 'yes'
             if 'process_timeout' in parameter_list:
                 process_timeout = parameter_list['process_timeout']
             if 'servos_movement_tracking_delay' in parameter_list:
@@ -176,10 +173,7 @@ class Camera:
                 contrast = parameter_list['contrast']
 
         self.set_color_to_track(color_to_track)
-        if alternative_camera_servos:
-            self.camera_servos = AlternativeCameraServosModule.AlternativeCameraServos(parameter_list)
-        else:
-            self.camera_servos = CameraServosModule.CameraServos(parameter_list)
+        self.camera_servos = CameraServosModule.CameraServos(parameter_list)
         self.process_timeout = process_timeout
         
         self.servos_movement_tracking_delay = float(servos_movement_tracking_delay)
@@ -245,7 +239,7 @@ class Camera:
         self.image.set(cv2.CAP_PROP_FRAME_WIDTH , X_RESOLUTION)
         self.image.set(cv2.CAP_PROP_FRAME_HEIGHT, Y_RESOLUTION)
         self.image.set(cv2.CAP_PROP_FPS, self.capture_fps)   #set frame
-        
+
         if self.video_format == VideoFormat.AVI.name:
             self.image.set(cv2.CAP_PROP_FOURCC, VIDEO_WRITER_AVI_FOURCC)
         elif self.video_format == VideoFormat.MP4.name:
