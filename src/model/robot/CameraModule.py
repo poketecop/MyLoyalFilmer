@@ -41,7 +41,8 @@ YELLOW_COLOR_UPPER = np.array([34, 255, 255])
 ORANGE_COLOR_LOWER = np.array([11, 43, 46])
 ORANGE_COLOR_UPPER = np.array([25, 255, 255])
 
-VIDEO_WRITER_FOURCC = cv2.VideoWriter.fourcc('M', 'J', 'P', 'G')
+VIDEO_WRITER_AVI_FOURCC = cv2.VideoWriter.fourcc('M', 'J', 'P', 'G')
+VIDEO_WRITER_MP4_FOURCC = cv2.VideoWriter.fourcc(*'MP4V')
 
 SERVOS_MOVEMENT_TRACKING_DELAY = 0.008
 SERVOS_MOVEMENT_TIMES_DELAY = 1
@@ -53,6 +54,12 @@ Y_RESOLUTION = 480
 
 X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 
+# Capturing frames and saving frames are not the same thing.
+CAPTURE_FPS = 120
+SAVING_FPS = 30
+
+BRIGHTNESS = 20
+CONTRAST = 20
 
 # Center x margin just in case.
 CENTER_X_MARGIN = 0
@@ -71,6 +78,10 @@ DELAY_TO_STOP_AFTER_MOVING = 0.15
 DELAY_TO_TRACK_AFTER_MOVING = 0.05
 
 CONSISTENT_LOST_CONSECUTIVE_TIMES = 2
+
+class VideoFormat(Enum):
+    AVI = 1
+    MP4 = 2
 
 class Camera:
 
@@ -104,6 +115,10 @@ class Camera:
     delay_to_stop_after_moving = None
     delay_to_track_after_moving = None
     consistent_lost_consecutive_times = None
+    saving_fps = None
+    video_format = None
+    brightness = None
+    contrast = None
     
 
     stop = False
@@ -114,7 +129,8 @@ class Camera:
         min_color_height_to_track = MIN_COLOR_HEIGHT_TO_TRACK, center_x_margin = CENTER_X_MARGIN, center_y_margin = CENTER_Y_MARGIN, 
         acceptable_margin_x = ACCEPTABLE_MARGIN_X, acceptable_margin_y = ACCEPTABLE_MARGIN_Y, degrees_to_move_to_track_color = DEGREES_TO_MOVE_TO_TRACK_COLOR, 
         delay_to_stop_after_moving = DELAY_TO_STOP_AFTER_MOVING, delay_to_track_after_moving = DELAY_TO_TRACK_AFTER_MOVING, 
-        consistent_lost_consecutive_times = CONSISTENT_LOST_CONSECUTIVE_TIMES):
+        consistent_lost_consecutive_times = CONSISTENT_LOST_CONSECUTIVE_TIMES, capture_fps = CAPTURE_FPS,
+        saving_fps = SAVING_FPS, video_format = VideoFormat.AVI.name, brightness = BRIGHTNESS, contrast = CONTRAST):
         ''' Uses module constants or parameter_list dictionary parameters to set self properties.
         '''
         if parameter_list:            
@@ -148,6 +164,16 @@ class Camera:
                 delay_to_track_after_moving = parameter_list['delay_to_track_after_moving']
             if 'consistent_lost_consecutive_times' in parameter_list:
                 consistent_lost_consecutive_times = parameter_list['consistent_lost_consecutive_times']
+            if 'capture_fps' in parameter_list:
+                capture_fps = parameter_list['capture_fps']
+            if 'saving_fps' in parameter_list:
+                saving_fps = parameter_list['saving_fps']
+            if 'video_format' in parameter_list:
+                video_format = parameter_list['video_format']
+            if 'brightness' in parameter_list:
+                brightness = parameter_list['brightness']
+            if 'contrast' in parameter_list:
+                contrast = parameter_list['contrast']
 
         self.set_color_to_track(color_to_track)
         if alternative_camera_servos:
@@ -178,6 +204,11 @@ class Camera:
         self.delay_to_stop_after_moving = float(delay_to_stop_after_moving)
         self.delay_to_track_after_moving = float(delay_to_track_after_moving)
         self.consistent_lost_consecutive_times = int(consistent_lost_consecutive_times)
+        self.capture_fps = int(capture_fps)
+        self.saving_fps = int(saving_fps)
+        self.video_format = video_format
+        self.brightness = int(brightness)
+        self.contrast = int(contrast)
         
     def set_color_to_track(self, color_to_track):
         if color_to_track == TrackableColor.RED.name:
@@ -211,12 +242,17 @@ class Camera:
         if not self.image.isOpened():
             raise IOError("Cannot open webcam")
 
-        self.image.set(3, 640)
-        self.image.set(4, 480)
-        self.image.set(5, 120)   #set frame
-        self.image.set(cv2.CAP_PROP_FOURCC, VIDEO_WRITER_FOURCC)
-        self.image.set(cv2.CAP_PROP_BRIGHTNESS, 20) #set brihtgness -64 - 64  0.0
-        self.image.set(cv2.CAP_PROP_CONTRAST, 20)   #set contrast -64 - 64  2.0
+        self.image.set(cv2.CAP_PROP_FRAME_WIDTH , X_RESOLUTION)
+        self.image.set(cv2.CAP_PROP_FRAME_HEIGHT, Y_RESOLUTION)
+        self.image.set(cv2.CAP_PROP_FPS, self.capture_fps)   #set frame
+        
+        if self.video_format == VideoFormat.AVI.name:
+            self.image.set(cv2.CAP_PROP_FOURCC, VIDEO_WRITER_AVI_FOURCC)
+        elif self.video_format == VideoFormat.MP4.name:
+            self.image.set(cv2.CAP_PROP_FOURCC, VIDEO_WRITER_MP4_FOURCC)
+        
+        self.image.set(cv2.CAP_PROP_BRIGHTNESS, self.brightness) #set brihtgness -64 - 64  0.0
+        self.image.set(cv2.CAP_PROP_CONTRAST, self.contrast)   #set contrast -64 - 64  2.0
 
     def get_frame_size(self):
         # We need to set resolutions.
@@ -243,8 +279,8 @@ class Camera:
         print(file_name)
 
         self.result = cv2.VideoWriter('/home/pi/Videos/' + file_name + '.avi', 
-                                VIDEO_WRITER_FOURCC,
-                                10, size)
+                                VIDEO_WRITER_AVI_FOURCC,
+                                self.saving_fps, size)
 
         print('\nFilm saving initied.')
 
@@ -311,7 +347,6 @@ class Camera:
        
         return (x,y,w,h)
 
-
     def init_film_display(self):
         (frame_width, frame_height) = self.get_frame_size()
 
@@ -356,81 +391,6 @@ class Camera:
             moved = True
 
         return moved
-
-    def print_pixels_per_angle(self):
-        self.camera_servos.init_servos_position()
-
-        self.init_film_capture()
-
-        ret, frame = self.image.read()
-
-        if not ret:
-            return
-
-        initial_gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        # Detect feature points in previous frame
-        initial_pts = cv2.goodFeaturesToTrack(initial_gray,
-                                            maxCorners=200,
-                                            qualityLevel=0.01,
-                                            minDistance=30,
-                                            blockSize=3
-        )
-
-        self.camera_servos.move_clockwise(1)
-
-        ret, frame = self.image.read()
-
-        if not ret:
-            return
-
-        x_moved_gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        # Detect feature points in previous frame
-        x_moved_pts = cv2.goodFeaturesToTrack(x_moved_gray,
-                                            maxCorners=200,
-                                            qualityLevel=0.01,
-                                            minDistance=30,
-                                            blockSize=3
-        )
-    
-        # Calculate the pixel per angle
-        # Compare the two sets of feature points
-        # and calculate the pixel per angle.
-        # The result is stored in 'pixels_per_angle_x'
-        m = cv2.estimateRigidTransform(initial_pts, x_moved_pts, fullAffine=False) #will only work with OpenCV-3 or less
-        # Extract traslation
-        pixels_per_angle_x = m[0,2]
-
-        print("\nPixels per angle x: " + str(pixels_per_angle_x))
-
-        self.camera_servos.move_up(1)
-
-        ret, frame = self.image.read()
-
-        if not ret:
-            return
-        
-        y_moved_gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        # Detect feature points in previous frame
-        y_moved_pts = cv2.goodFeaturesToTrack(y_moved_gray,
-                                            maxCorners=200,
-                                            qualityLevel=0.01,
-                                            minDistance=30,
-                                            blockSize=3
-        )
-
-        # Calculate the pixel per angle
-        # Compare the two sets of feature points
-        # and calculate the pixel per angle.
-        # The result is stored in 'pixels_per_angle_y'
-        m = cv2.estimateRigidTransform(x_moved_pts, y_moved_pts, fullAffine=False) #will only work with OpenCV-3 or less
-
-        # Extract traslation
-        pixels_per_angle_y = m[0,2]
-
-        print("\nPixels per angle y: " + str(pixels_per_angle_y))
 
 
 

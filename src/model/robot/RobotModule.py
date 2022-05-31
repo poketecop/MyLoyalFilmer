@@ -78,8 +78,6 @@ class Robot:
                 self.camera.camera_servos.calibrate_servos()
             elif self.mode == Mode.TEST_CAMERA_SERVO_CONTROL.name:
                 self.camera.camera_servos.test_servo_control()
-            elif self.mode == Mode.PRINT_PIXELS_PER_ANGLE.name:
-                self.camera.print_pixels_per_angle()
             elif self.mode == Mode.TRACK_LINE_AND_TEST_CAMERA_SERVO_CONTROL.name:
                 self.track_line_and_test_camera_servo_control()
             
