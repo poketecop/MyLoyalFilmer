@@ -37,21 +37,21 @@ class Robot:
     tracking_finished = False
 
     def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False):
-        
-        if 'mode' in parameter_list:
-            mode = parameter_list['mode']
-        
-        if 'process_timeout' in parameter_list:
-            process_timeout = int(parameter_list['process_timeout'])
-        
-        if 'initial_delay' in parameter_list:
-            initial_delay = int(parameter_list['initial_delay'])
+        if parameter_list:
+            if 'mode' in parameter_list:
+                mode = parameter_list['mode']
+            
+            if 'process_timeout' in parameter_list:
+                process_timeout = int(parameter_list['process_timeout'])
+            
+            if 'initial_delay' in parameter_list:
+                initial_delay = int(parameter_list['initial_delay'])
 
-        if 'tracking_laps' in parameter_list:
-            tracking_laps = int(parameter_list['tracking_laps'])
+            if 'tracking_laps' in parameter_list:
+                tracking_laps = int(parameter_list['tracking_laps'])
 
-        if 'debug' in parameter_list:
-            debug = parameter_list['debug'].lower() == 'yes'
+            if 'debug' in parameter_list:
+                debug = parameter_list['debug'].lower() == 'yes'
         
         self.init_pin_numbering_mode()
         self.process_timeout = process_timeout
@@ -61,7 +61,7 @@ class Robot:
         self.debug = debug
 
         self.motors = Motors(parameter_list)
-        self.tracking_module = LineTrackerModule.LineTracker()
+        self.tracking_module = LineTrackerModule.LineTracker(parameter_list)
         self.camera = CameraModule.Camera(parameter_list, process_timeout = process_timeout)
         
     def play(self):
@@ -149,7 +149,7 @@ class Robot:
             # 4 tracking pins level status
             # 0 0 0 0
             if self.tracking_module.every_sensor_over_black():
-                if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                     mark_lap = True
                     
                     if lap >= self.tracking_laps:
@@ -162,43 +162,43 @@ class Robot:
             
             # Handle right acute angle and right right angle
             elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
-                if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                     # Turn right in place,speed is 100,delay 80ms
                     self.motors.sharp_right()
     
             # Handle left acute angle and left right angle 
             elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
-                if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                     # Turn right in place,speed is 100,delay 80ms  
                     self.motors.sharp_left()
     
             # Left_sensor1 detected black line
             elif self.tracking_module.left_sensor_1_detected_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                     self.motors.spin_left()
         
             # Right_sensor2 detected black line
             elif self.tracking_module.right_sensor2_detected_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                     self.motors.spin_right()
     
             elif self.tracking_module.middle_right_sensor_misses_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                     self.motors.left()
     
             elif self.tracking_module.middle_left_sensor_misses_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                     self.motors.right()
 
             elif self.tracking_module.both_middle_sensors_over_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.CONSISTENT_CONSECUTIVE_TIMES:
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                     self.motors.run()
             else:
                 # When the every sensor is NOT over the black line, the car keeps the previous running state.
                 if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
                     self.tracking_module.consecutive_tracking_option_times += 1
 
-                    if self.tracking_module.consecutive_tracking_option_times >= LineTrackerModule.TRACK_LOST_CONSECUTIVE_TIMES:
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
                         print('\nTrack lost')
                         break
                 else:

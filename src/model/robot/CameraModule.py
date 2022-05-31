@@ -115,36 +115,37 @@ class Camera:
         consistent_lost_consecutive_times = CONSISTENT_LOST_CONSECUTIVE_TIMES):
         ''' Uses module constants or parameter_list dictionary parameters to set self properties.
         '''
-        if 'color_to_track' in parameter_list:
-            color_to_track = parameter_list['color_to_track']
-        if 'alternative_camera_servos' in parameter_list:
-            alternative_camera_servos = parameter_list['alternative_camera_servos'].lower() == 'yes'
-        if 'process_timeout' in parameter_list:
-            process_timeout = parameter_list['process_timeout']
-        if 'servos_movement_tracking_delay' in parameter_list:
-            servos_movement_tracking_delay = parameter_list['servos_movement_tracking_delay']
-        if 'servos_movement_times_delay' in parameter_list:
-            servos_movement_times_delay = parameter_list['servos_movement_times_delay']
-        if 'min_color_width_to_track' in parameter_list:
-            min_color_width_to_track = parameter_list['min_color_width_to_track']
-        if 'min_color_height_to_track' in parameter_list:
-            min_color_height_to_track = parameter_list['min_color_height_to_track']
-        if 'center_x_margin' in parameter_list:
-            center_x_margin = parameter_list['center_x_margin']
-        if 'center_y_margin' in parameter_list:
-            center_y_margin = parameter_list['center_y_margin']
-        if 'acceptable_margin_x' in parameter_list:
-            acceptable_margin_x = parameter_list['acceptable_margin_x']
-        if 'acceptable_margin_y' in parameter_list:
-            acceptable_margin_y = parameter_list['acceptable_margin_y']
-        if 'degrees_to_move_to_track_color' in parameter_list:
-            degrees_to_move_to_track_color = parameter_list['degrees_to_move_to_track_color']
-        if 'delay_to_stop_after_moving' in parameter_list:
-            delay_to_stop_after_moving = parameter_list['delay_to_stop_after_moving']
-        if 'delay_to_track_after_moving' in parameter_list:
-            delay_to_track_after_moving = parameter_list['delay_to_track_after_moving']
-        if 'consistent_lost_consecutive_times' in parameter_list:
-            consistent_lost_consecutive_times = parameter_list['consistent_lost_consecutive_times']
+        if parameter_list:            
+            if 'color_to_track' in parameter_list:
+                color_to_track = parameter_list['color_to_track']
+            if 'alternative_camera_servos' in parameter_list:
+                alternative_camera_servos = parameter_list['alternative_camera_servos'].lower() == 'yes'
+            if 'process_timeout' in parameter_list:
+                process_timeout = parameter_list['process_timeout']
+            if 'servos_movement_tracking_delay' in parameter_list:
+                servos_movement_tracking_delay = parameter_list['servos_movement_tracking_delay']
+            if 'servos_movement_times_delay' in parameter_list:
+                servos_movement_times_delay = parameter_list['servos_movement_times_delay']
+            if 'min_color_width_to_track' in parameter_list:
+                min_color_width_to_track = parameter_list['min_color_width_to_track']
+            if 'min_color_height_to_track' in parameter_list:
+                min_color_height_to_track = parameter_list['min_color_height_to_track']
+            if 'center_x_margin' in parameter_list:
+                center_x_margin = parameter_list['center_x_margin']
+            if 'center_y_margin' in parameter_list:
+                center_y_margin = parameter_list['center_y_margin']
+            if 'acceptable_margin_x' in parameter_list:
+                acceptable_margin_x = parameter_list['acceptable_margin_x']
+            if 'acceptable_margin_y' in parameter_list:
+                acceptable_margin_y = parameter_list['acceptable_margin_y']
+            if 'degrees_to_move_to_track_color' in parameter_list:
+                degrees_to_move_to_track_color = parameter_list['degrees_to_move_to_track_color']
+            if 'delay_to_stop_after_moving' in parameter_list:
+                delay_to_stop_after_moving = parameter_list['delay_to_stop_after_moving']
+            if 'delay_to_track_after_moving' in parameter_list:
+                delay_to_track_after_moving = parameter_list['delay_to_track_after_moving']
+            if 'consistent_lost_consecutive_times' in parameter_list:
+                consistent_lost_consecutive_times = parameter_list['consistent_lost_consecutive_times']
 
         self.set_color_to_track(color_to_track)
         if alternative_camera_servos:
