@@ -70,7 +70,7 @@ class CameraServos:
         time.sleep(1)
         self.stop()
 
-        print('\nServos initial position set.')
+        # print('\nServos initial position set.')
 
     def servo_control(self, x_angle, y_angle):
         '''Control servo angle'''
@@ -115,8 +115,8 @@ class CameraServos:
         else:
             self.previous_x_servo_angle = myangleA
 
-        print('\nCurrent servo pulse x: ' + str(self.current_x_servo_angle))
-        print('\nServo pulse x: ' + str(myangleA))
+        # print('\nCurrent servo pulse x: ' + str(self.current_x_servo_angle))
+        # print('\nServo pulse x: ' + str(myangleA))
         self.current_x_servo_angle = myangleA
 
     def servo_pulse_y(self, myangleB):
@@ -128,8 +128,8 @@ class CameraServos:
         else:
             self.previous_y_servo_angle = myangleB
         
-        print('\nCurrent servo pulse y: ' + str(self.current_y_servo_angle))
-        print('\nServo pulse y: ' + str(myangleB))
+        # print('\nCurrent servo pulse y: ' + str(self.current_y_servo_angle))
+        # print('\nServo pulse y: ' + str(myangleB))
         self.current_y_servo_angle = myangleB
 
     def calc_duty_cycle(self, angle):
@@ -144,7 +144,7 @@ class CameraServos:
         pos = 0
         while pos < 180:
             self.servo_control(pos, pos)
-            print(pos)
+            # print(pos)
             pos = pos + 2
             sleep(0.15)
             self.stop()
@@ -153,26 +153,26 @@ class CameraServos:
         pos = 180   
         while pos > 0:
             self.servo_control(pos, pos)
-            print(pos)
+            # print(pos)
             pos = pos - 2
             sleep(0.15)
             self.stop()
             sleep(0.15)
 
     def move_clockwise(self, degrees):
-        print('\nMove clockwise: ' + str(degrees) + ' degrees.')
+        # print('\nMove clockwise: ' + str(degrees) + ' degrees.')
         self.servo_control(self.current_x_servo_angle - degrees, self.current_y_servo_angle)
 
     def move_anticlockwise(self, degrees):
-        print('\nMove anticlockwise: ' + str(degrees) + ' degrees.')
+        # print('\nMove anticlockwise: ' + str(degrees) + ' degrees.')
         self.servo_control(self.current_x_servo_angle + degrees, self.current_y_servo_angle)
 
     def move_up(self, degrees):
-        print('\nMove up: ' + str(degrees) + ' degrees.')
+        # print('\nMove up: ' + str(degrees) + ' degrees.')
         self.servo_control(self.current_x_servo_angle, self.current_y_servo_angle + degrees)
 
     def move_down(self, degrees):
-        print('\nMove down: ' + str(degrees) + ' degrees.')
+        # print('\nMove down: ' + str(degrees) + ' degrees.')
         self.servo_control(self.current_x_servo_angle, self.current_y_servo_angle - degrees)
 
     def calc_current_direction(self):

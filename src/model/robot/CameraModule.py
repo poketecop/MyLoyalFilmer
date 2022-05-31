@@ -56,7 +56,7 @@ X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 
 # Capturing frames and saving frames are not the same thing.
 CAPTURE_FPS = 120
-SAVING_FPS = 30
+SAVING_FPS = 15
 
 BRIGHTNESS = 20
 CONTRAST = 20
@@ -78,6 +78,8 @@ DELAY_TO_STOP_AFTER_MOVING = 0.15
 DELAY_TO_TRACK_AFTER_MOVING = 0.05
 
 CONSISTENT_LOST_CONSECUTIVE_TIMES = 2
+
+VIDEOS_PATH = '/home/pi/Videos/'
 
 class VideoFormat(Enum):
     AVI = 1
@@ -232,7 +234,7 @@ class Camera:
 
     def init_film_capture(self):
         self.image = cv2.VideoCapture(-1)
-        print('\Film capture initied.')
+        # print('\Film capture initied.')
         if not self.image.isOpened():
             raise IOError("Cannot open webcam")
 
@@ -262,7 +264,7 @@ class Camera:
         # We need to set resolutions.
         size = self.get_frame_size()
 
-        print("\nFilm saving resolution: " + str(size[0]) + " X " + str(size[1]))
+        # print("\nFilm saving resolution: " + str(size[0]) + " X " + str(size[1]))
         
         # Below VideoWriter object will create
         # a frame of above defined The output 
@@ -270,13 +272,14 @@ class Camera:
 
         file_name = dt.now().strftime('%a_%d_%m_%Y_%H_%M_%S')
 
-        print(file_name)
+        # print(file_name)
 
-        self.result = cv2.VideoWriter('/home/pi/Videos/' + file_name + '.avi', 
-                                VIDEO_WRITER_AVI_FOURCC,
-                                self.saving_fps, size)
+        if self.video_format == VideoFormat.AVI.name:
+            self.result = cv2.VideoWriter(VIDEOS_PATH + file_name + '.avi', VIDEO_WRITER_AVI_FOURCC, self.saving_fps, size)
+        elif self.video_format == VideoFormat.MP4.name:
+            self.result = cv2.VideoWriter(VIDEOS_PATH + file_name + '.mp4', VIDEO_WRITER_MP4_FOURCC, self.saving_fps, size)
 
-        print('\nFilm saving initied.')
+        # print('\nFilm saving initied.')
 
     def finish_filming(self):
         self.finish_film_capture()
@@ -286,13 +289,13 @@ class Camera:
         # When everything done, release 
         # the video capture
         self.image.release()
-        print("The video capturing was released")
+        # print("The video capturing was released")
     
     def finish_film_saving(self):
         # When everything done, release 
         # the video writing
         self.result.release()
-        print("The video was successfully saved")
+        # print("The video was successfully saved")
     
 
     def film(self):
@@ -344,7 +347,7 @@ class Camera:
     def init_film_display(self):
         (frame_width, frame_height) = self.get_frame_size()
 
-        print("\nFilm display resolution: " + str(frame_width) + " X " + str(frame_height))
+        # print("\nFilm display resolution: " + str(frame_width) + " X " + str(frame_height))
 
         self.image_widget = widgets.Image(format='jpeg', width=frame_width, height=frame_height)
         display(self.image_widget)
@@ -367,8 +370,8 @@ class Camera:
         center_x = color_x + color_width / 2
         center_y = color_y + color_height / 2
 
-        print("\nCenter x: " + str(center_x))
-        print("\nCenter y: " + str(center_y))
+        # print("\nCenter x: " + str(center_x))
+        # print("\nCenter y: " + str(center_y))
 
         if center_x < self.left_acceptable_x:
             self.camera_servos.move_anticlockwise(degrees)

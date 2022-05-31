@@ -20,7 +20,7 @@ class Mode(Enum):
     TRACK_LINE_AND_COLOR_TRACK = 4
     CALIBRATE_CAMERA_SERVOS = 5
     TEST_CAMERA_SERVO_CONTROL = 7
-    PRINT_PIXELS_PER_ANGLE = 8
+    # print_PIXELS_PER_ANGLE = 8
     TRACK_LINE_AND_TEST_CAMERA_SERVO_CONTROL = 9
 
 class Robot:
@@ -197,12 +197,12 @@ class Robot:
                     self.tracking_module.consecutive_tracking_option_times += 1
                    
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
-                        # Print consecutive_tracking_option_times
-                        print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
-                        # Print track_lost_consecutive_times
-                        print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
+                        # # print consecutive_tracking_option_times
+                        # print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
+                        # # print track_lost_consecutive_times
+                        # print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
 
-                        print('\nTrack lost')
+                        # print('\nTrack lost')
                         break
                 else:
                     self.tracking_module.consecutive_tracking_option_times = 0
@@ -211,14 +211,14 @@ class Robot:
         self.motors.soft_stop()
 
     def color_track(self):
-        print('\n Entered color_track method.')
+        # print('\n Entered color_track method.')
 
         self.camera.camera_servos.init_servos_position()
         # self.camera.camera_servos.init_servos_position_gradually()
 
         t_start = time.time()
 
-        print('\nColor track start: ' + str(t_start))
+        # print('\nColor track start: ' + str(t_start))
 
         self.camera.init_film_capture()
         self.camera.init_film_saving()
@@ -250,17 +250,17 @@ class Robot:
 
             # Check delay to stop after moving servos.
             if delay_to_stop_after_moving_end_time:
-                # Print current_accurate_time
-                print('\nCurrent time: ' + str(current_accurate_time))
-                # Print delay_to_stop_after_moving_end_time
-                print('\nDelay to stop after moving end time: ' + str(delay_to_stop_after_moving_end_time))
+                # # print current_accurate_time
+                # print('\nCurrent time: ' + str(current_accurate_time))
+                # # print delay_to_stop_after_moving_end_time
+                # print('\nDelay to stop after moving end time: ' + str(delay_to_stop_after_moving_end_time))
                 if current_accurate_time < delay_to_stop_after_moving_end_time:
                     # Keep waiting
-                    print('\nWaiting for delay to stop after moving.')
+                    # print('\nWaiting for delay to stop after moving.')
                     continue
 
                 # Waiting finish. Reset the time.
-                print('\nDelay to stop after moving finish.')
+                # print('\nDelay to stop after moving finish.')
                 delay_to_stop_after_moving_end_time = None
                 self.camera.camera_servos.stop()
                 # Set delay to track after moving servos to avoid tracking while moving servos.
@@ -268,22 +268,22 @@ class Robot:
 
             # Check delay to track after moving servos.
             if delay_to_track_after_moving_end_time:
-                # Print current_accurate_time
-                print('\nCurrent time: ' + str(current_accurate_time))
-                # Print delay_to_track_after_moving_end_time
-                print('\nDelay to track after moving end time: ' + str(delay_to_track_after_moving_end_time))
+                # # print current_accurate_time
+                # print('\nCurrent time: ' + str(current_accurate_time))
+                # # print delay_to_track_after_moving_end_time
+                # print('\nDelay to track after moving end time: ' + str(delay_to_track_after_moving_end_time))
                 if current_accurate_time < delay_to_track_after_moving_end_time:
                     # Keep waiting
-                    print('\nWaiting for delay to track after moving.')
+                    # print('\nWaiting for delay to track after moving.')
                     continue
                 # Waiting finish. Reset the time.
-                print('\nDelay to track after moving finish.')
+                # print('\nDelay to track after moving finish.')
                 delay_to_track_after_moving_end_time = None
 
             cnts = self.camera.get_color_countours(frame)
 
             cnts_len = len(cnts)
-            print('\nCountours: ' + str(cnts_len))
+            # print('\nCountours: ' + str(cnts_len))
 
             if cnts_len <= 0:
                 times_to_be_consistent_trackable_color = 0
@@ -297,7 +297,7 @@ class Robot:
             
             color_x, color_y, color_width, color_height = self.camera.get_outer_coordinates(cnts)
 
-            print('\nColor x: ' + str(color_x) + ' y: ' + str(color_y) + ' width: ' + str(color_width) + ' height: ' + str(color_height))
+            # print('\nColor x: ' + str(color_x) + ' y: ' + str(color_y) + ' width: ' + str(color_width) + ' height: ' + str(color_height))
             
             if self.debug:
                 # Mark the detected colors
@@ -349,15 +349,15 @@ class Robot:
         return 0
 
     def chech_test_position(self, color_x, color_y, i):
-        print('\n¿Are you in the desired' + str(i) + ' test position? Y/N:N')
+        # print('\n¿Are you in the desired' + str(i) + ' test position? Y/N:N')
 
         in_position = input()
 
         if not in_position or in_position.upper == 'N':
-            print('\nMove to the desired' + str(i) + ' test position.')
+            # print('\nMove to the desired' + str(i) + ' test position.')
             return i
         
-        print('\nWrite down X and Y value: X = ' + str(color_x) + ' Y = ' + str(color_y))
+        # print('\nWrite down X and Y value: X = ' + str(color_x) + ' Y = ' + str(color_y))
 
         return i + 1
 
