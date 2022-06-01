@@ -49,8 +49,8 @@ SERVOS_MOVEMENT_TIMES_DELAY = 1
 MIN_COLOR_WIDTH_TO_TRACK = 40
 MIN_COLOR_HEIGHT_TO_TRACK = 50
 
-X_RESOLUTION = 1280
-Y_RESOLUTION = 960
+X_RESOLUTION = 640
+Y_RESOLUTION = 480
 
 X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 
@@ -190,7 +190,7 @@ class Camera:
 
         self.left_acceptable_x = self.center_x - acceptable_margin_x
         self.right_acceptable_x = self.center_x + acceptable_margin_x
-        
+
         self.up_acceptable_y = self.center_y - acceptable_margin_y
         self.down_acceptable_y = self.center_y + acceptable_margin_y
 

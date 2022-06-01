@@ -96,6 +96,9 @@ python3 main.py -mode TEST_CAMERA_SERVO_CONTROL -alternative_camera_servos yes
 
 ### Camera notes
 
+1280*960 resolution seems equal or even worse, and frame rate is worse.
+640*480 resolution is good.
+
  v4l2-ctl --list-formats-ext
 ioctl: VIDIOC_ENUM_FMT
         Type: Video Capture
