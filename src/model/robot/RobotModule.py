@@ -254,8 +254,11 @@ class Robot:
                 # print('\nDelay to track after moving finish.')
                 delay_to_track_after_moving_end_time = None
 
-            frame_copy = self.camera.frame.copy()
-            cnts = self.camera.get_color_countours(frame_copy)
+            if not self.camera.processing_frame_queue:
+                continue
+
+            frame = self.camera.processing_frame_queue.pop()
+            cnts = self.camera.get_color_countours(frame)
 
             cnts_len = len(cnts)
             # print('\nCountours: ' + str(cnts_len))
@@ -276,6 +279,7 @@ class Robot:
             
             if self.debug:
                 # Mark the detected colors
+                frame_copy = frame.copy()
                 self.camera.mark_the_detected_colors(frame_copy, color_x,color_y, color_width, color_height)
                 self.camera.display_frame(frame_copy)
             
@@ -320,6 +324,11 @@ class Robot:
 
         self.camera.stop = True
 
+    def save_film(self):
+        while not self.camera.stop:
+            if self.camera.saving_frame_queue: 
+                self.camera.result.write(self.camera.saving_frame_queue.pop())
+
     def save_film_and_color_track(self):
         # print('\n Entered color_track method.')
 
@@ -333,25 +342,28 @@ class Robot:
         if self.debug:
             self.camera.init_film_display()
 
-        # Read the first frame and stored as object property.
-        ret, self.camera.frame = self.camera.image.read()
-        self.camera.result.write(self.camera.frame)
-
-        thread1 = threading.Thread(target = self.color_track)
+        thread1 = threading.Thread(target = self.save_film)
         thread1.setDaemon(True)
         thread1.start()
 
-        # Write the frame into the
-        # file 'filename.avi'
+        thread2 = threading.Thread(target = self.color_track)
+        thread2.setDaemon(True)
+        thread2.start()
+
+        # Read the first frame and stored as object property.
         while not self.camera.stop:
-            ret, self.camera.frame = self.camera.image.read()
-            self.camera.result.write(self.camera.frame)
+            ret, frame = self.camera.image.read()
+            self.camera.saving_frame_queue.append(frame)
+            self.camera.processing_frame_queue.append(frame)
+
+        while thread1.is_alive():
+            time.sleep(1)
+
+        while thread2.is_alive():
+            time.sleep(1)
 
         self.camera.finish_filming()
 
-        while thread1.is_alive():
-            time.sleep(2)
-        
         return 0
 
     def chech_test_position(self, color_x, color_y, i):

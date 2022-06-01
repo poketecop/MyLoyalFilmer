@@ -11,8 +11,7 @@ from datetime import datetime as dt
 import ipywidgets.widgets as widgets
 from IPython.display import display
 from model.robot import CameraServosModule
-
-from model.robot.CameraServosModule import CameraServos
+from collections import deque
 
 class TrackableColor(Enum):
     RED = 1
@@ -55,7 +54,7 @@ Y_RESOLUTION = 480
 X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 
 # Capturing frames and saving frames are not the same thing.
-CAPTURE_FPS = 30
+CAPTURE_FPS = 120
 SAVING_FPS = 30
 
 BRIGHTNESS = 10
@@ -91,7 +90,8 @@ class Camera:
     result = None
     image = None
     image_widget = None
-    frame = None
+    processing_frame_queue = None
+    saving_frame_queue = None
 
     # Above module constants will be stored in these properties 
     # or the constructor parameter_list dicionary values instead.
@@ -175,6 +175,8 @@ class Camera:
 
         self.set_color_to_track(color_to_track)
         self.camera_servos = CameraServosModule.CameraServos(parameter_list)
+        self.saving_frame_queue = deque()
+        self.processing_frame_queue = deque()
         self.process_timeout = process_timeout
         
         self.servos_movement_tracking_delay = float(servos_movement_tracking_delay)
