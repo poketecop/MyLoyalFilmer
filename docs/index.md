@@ -1,13 +1,13 @@
 ## MyLoyalFilmer
 OpenCV, Raspberry PI, Yahboom G1 Tank loyal filmer project.
 
-## Project requirements
+### Project requirements
 ```
     py -m pip install --upgrade pip setuptools wheel
     py -m pip install -r requirements.txt
 ```
 
-## Color track test
+### Color track test
 
 Camera image is mirrored.
 
@@ -28,7 +28,7 @@ Countours: 35
 Color radius:115.29320526123047
 Write down X and Y value: X = 461.5 Y = 380.5
 
-# Color track notes
+### Color track notes
 
 Color track tutorial code is prepared for one time and one direction only.
 
@@ -74,7 +74,7 @@ Y = current y-angle * target dot/240
 
 This is not right because dot 0 0 doesn't mean 0 0 angle and 640 240 doesn't mean 180 180 angle.
 
-## Commands
+### Commands
 
 cd  Yahboom_Project/MyLoyalFilmer/src
 
@@ -86,13 +86,47 @@ python3 main.py -desired_duty_cycle 20 -process_timeout 60 -initial_delay 25 -co
 cd /home/pi
 cd  Yahboom_Project/MyLoyalFilmer/src
 
-## Servo movement notes
+### Servo movement notes
 
 Servos turn better degree by degree. Pulse widht unit by pulse width unit works bad. Direct turning works good but is inconsistent.
 
 Test.
 
 python3 main.py -mode TEST_CAMERA_SERVO_CONTROL -alternative_camera_servos yes
+
+### Camera notes
+
+ v4l2-ctl --list-formats-ext
+ioctl: VIDIOC_ENUM_FMT
+        Type: Video Capture
+
+        [0]: 'YUYV' (YUYV 4:2:2)
+                Size: Discrete 640x480
+                        Interval: Discrete 0.033s (30.000 fps)
+                Size: Discrete 352x288
+                        Interval: Discrete 0.033s (30.000 fps)
+                Size: Discrete 320x240
+                        Interval: Discrete 0.033s (30.000 fps)
+                Size: Discrete 176x144
+                        Interval: Discrete 0.033s (30.000 fps)
+                Size: Discrete 160x120
+                        Interval: Discrete 0.033s (30.000 fps)
+                Size: Discrete 1280x960
+                        Interval: Discrete 0.033s (30.000 fps)
+        [1]: 'MJPG' (Motion-JPEG, compressed)
+                Size: Discrete 640x480
+                        Interval: Discrete 0.033s (30.000 fps)
+                Size: Discrete 352x288
+                        Interval: Discrete 0.033s (30.000 fps)
+                Size: Discrete 320x240
+                        Interval: Discrete 0.033s (30.000 fps)
+                Size: Discrete 176x144
+                        Interval: Discrete 0.033s (30.000 fps)
+                Size: Discrete 160x120
+                        Interval: Discrete 0.033s (30.000 fps)
+                Size: Discrete 1280x960
+                        Interval: Discrete 0.033s (30.000 fps)
+
 
 ### Markdown
 

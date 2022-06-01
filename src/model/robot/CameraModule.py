@@ -49,26 +49,26 @@ SERVOS_MOVEMENT_TIMES_DELAY = 1
 MIN_COLOR_WIDTH_TO_TRACK = 40
 MIN_COLOR_HEIGHT_TO_TRACK = 50
 
-X_RESOLUTION = 640
-Y_RESOLUTION = 480
+X_RESOLUTION = 1280
+Y_RESOLUTION = 960
 
 X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 
 # Capturing frames and saving frames are not the same thing.
-CAPTURE_FPS = 120
-SAVING_FPS = 15
+CAPTURE_FPS = 30
+SAVING_FPS = 30
 
-BRIGHTNESS = 20
-CONTRAST = 20
+BRIGHTNESS = 10
+CONTRAST = 50
 
 # Center x margin just in case.
-CENTER_X_MARGIN = 0
+CENTER_X_MARGIN_PERCENTAGE = 0
 # As the idea is to have a camera that can be used to track a color of a shirt,
 # center will be the center of the shirt, so we will add a margin to place de center below.
-CENTER_Y_MARGIN = 20
+CENTER_Y_MARGIN_PERCENTAGE = 4
 
-ACCEPTABLE_MARGIN_X = 90
-ACCEPTABLE_MARGIN_Y = 90
+ACCEPTABLE_PERCENTAGE_MARGIN_X = 14
+ACCEPTABLE_PERCENTAGE_MARGIN_Y = 19
 
 # For some reason, while motors are running, degrees become less degrees.
 # Testing, 10 seemed to work better than 15 for instance.
@@ -104,16 +104,15 @@ class Camera:
     servos_movement_times_delay = None
     min_color_width_to_track = None
     min_color_height_to_track = None
-    center_x_margin = None
-    center_y_margin = None
+
     center_x = None
     center_y = None
-    acceptable_margin_x = None
-    acceptable_margin_y = None
+
     left_acceptable_x = None
     right_acceptable_x = None
     up_acceptable_y = None
     down_acceptable_y = None
+
     degrees_to_move_to_track_color = None
     delay_to_stop_after_moving = None
     delay_to_track_after_moving = None
@@ -122,14 +121,13 @@ class Camera:
     video_format = None
     brightness = None
     contrast = None
-    
 
     stop = False
 
     def __init__(self, parameter_list, process_timeout, color_to_track = TrackableColor.RED.name, servos_movement_tracking_delay = SERVOS_MOVEMENT_TRACKING_DELAY, 
         servos_movement_times_delay = SERVOS_MOVEMENT_TIMES_DELAY, min_color_width_to_track = MIN_COLOR_WIDTH_TO_TRACK, 
-        min_color_height_to_track = MIN_COLOR_HEIGHT_TO_TRACK, center_x_margin = CENTER_X_MARGIN, center_y_margin = CENTER_Y_MARGIN, 
-        acceptable_margin_x = ACCEPTABLE_MARGIN_X, acceptable_margin_y = ACCEPTABLE_MARGIN_Y, degrees_to_move_to_track_color = DEGREES_TO_MOVE_TO_TRACK_COLOR, 
+        min_color_height_to_track = MIN_COLOR_HEIGHT_TO_TRACK, center_x_margin_percentage = CENTER_X_MARGIN_PERCENTAGE, center_y_margin_percentage = CENTER_Y_MARGIN_PERCENTAGE, 
+        acceptable_percentage_margin_x = ACCEPTABLE_PERCENTAGE_MARGIN_X, acceptable_percentage_margin_y = ACCEPTABLE_PERCENTAGE_MARGIN_Y, degrees_to_move_to_track_color = DEGREES_TO_MOVE_TO_TRACK_COLOR, 
         delay_to_stop_after_moving = DELAY_TO_STOP_AFTER_MOVING, delay_to_track_after_moving = DELAY_TO_TRACK_AFTER_MOVING, 
         consistent_lost_consecutive_times = CONSISTENT_LOST_CONSECUTIVE_TIMES, capture_fps = CAPTURE_FPS,
         saving_fps = SAVING_FPS, video_format = VideoFormat.AVI.name, brightness = BRIGHTNESS, contrast = CONTRAST):
@@ -148,14 +146,14 @@ class Camera:
                 min_color_width_to_track = parameter_list['min_color_width_to_track']
             if 'min_color_height_to_track' in parameter_list:
                 min_color_height_to_track = parameter_list['min_color_height_to_track']
-            if 'center_x_margin' in parameter_list:
-                center_x_margin = parameter_list['center_x_margin']
-            if 'center_y_margin' in parameter_list:
-                center_y_margin = parameter_list['center_y_margin']
-            if 'acceptable_margin_x' in parameter_list:
-                acceptable_margin_x = parameter_list['acceptable_margin_x']
-            if 'acceptable_margin_y' in parameter_list:
-                acceptable_margin_y = parameter_list['acceptable_margin_y']
+            if 'center_x_margin_percentage' in parameter_list:
+                center_x_margin_percentage = parameter_list['center_x_margin_percentage']
+            if 'center_y_margin_percentage' in parameter_list:
+                center_y_margin_percentage = parameter_list['center_y_margin_percentage']
+            if 'acceptable_percentage_margin_x' in parameter_list:
+                acceptable_percentage_margin_x = parameter_list['acceptable_percentage_margin_x']
+            if 'acceptable_percentage_margin_y' in parameter_list:
+                acceptable_percentage_margin_y = parameter_list['acceptable_percentage_margin_y']
             if 'degrees_to_move_to_track_color' in parameter_list:
                 degrees_to_move_to_track_color = parameter_list['degrees_to_move_to_track_color']
             if 'delay_to_stop_after_moving' in parameter_list:
@@ -183,19 +181,18 @@ class Camera:
         self.servos_movement_times_delay = int(servos_movement_times_delay)
         self.min_color_width_to_track = int(min_color_width_to_track)
         self.min_color_height_to_track = int(min_color_height_to_track)
-        self.center_x_margin = int(center_x_margin)
-        self.center_y_margin = int(center_y_margin)
-        self.acceptable_margin_x = int(acceptable_margin_x)
-        self.acceptable_margin_y = int(acceptable_margin_y)
 
-        self.center_x = X_RESOLUTION / 2 + self.center_x_margin
-        self.center_y = Y_RESOLUTION / 2 + self.center_y_margin
+        self.center_x = X_RESOLUTION / 2 + ((int(center_x_margin_percentage) * X_RESOLUTION)/100)
+        self.center_y = Y_RESOLUTION / 2 + ((int(center_y_margin_percentage) * Y_RESOLUTION)/100)
+        
+        acceptable_margin_x = (int(acceptable_percentage_margin_x) * X_RESOLUTION)/100
+        acceptable_margin_y = (int(acceptable_percentage_margin_y) * Y_RESOLUTION)/100
 
-        self.left_acceptable_x = self.center_x - self.acceptable_margin_x
-        self.right_acceptable_x = self.center_x + self.acceptable_margin_x
-
-        self.up_acceptable_y = self.center_y - self.acceptable_margin_y
-        self.down_acceptable_y = self.center_y + self.acceptable_margin_y
+        self.left_acceptable_x = self.center_x - acceptable_margin_x
+        self.right_acceptable_x = self.center_x + acceptable_margin_x
+        
+        self.up_acceptable_y = self.center_y - acceptable_margin_y
+        self.down_acceptable_y = self.center_y + acceptable_margin_y
 
         self.degrees_to_move_to_track_color = int(degrees_to_move_to_track_color)
         self.delay_to_stop_after_moving = float(delay_to_stop_after_moving)
