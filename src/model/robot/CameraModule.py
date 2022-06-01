@@ -1,6 +1,7 @@
 #-*- coding:UTF-8 -*-
 
 from enum import Enum
+from queue import SimpleQueue
 import cv2
 import time
 import numpy as np
@@ -11,7 +12,6 @@ from datetime import datetime as dt
 import ipywidgets.widgets as widgets
 from IPython.display import display
 from model.robot import CameraServosModule
-from collections import deque
 
 class TrackableColor(Enum):
     RED = 1
@@ -54,11 +54,11 @@ Y_RESOLUTION = 480
 X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 
 # Capturing frames and saving frames are not the same thing.
-CAPTURE_FPS = 120
-SAVING_FPS = 30
+CAPTURE_FPS = 30
+SAVING_FPS = 20
 
 BRIGHTNESS = 10
-CONTRAST = 50
+CONTRAST = 30
 
 # Center x margin just in case.
 CENTER_X_MARGIN_PERCENTAGE = 0
@@ -175,8 +175,8 @@ class Camera:
 
         self.set_color_to_track(color_to_track)
         self.camera_servos = CameraServosModule.CameraServos(parameter_list)
-        self.saving_frame_queue = deque()
-        self.processing_frame_queue = deque()
+        self.saving_frame_queue = SimpleQueue()
+        self.processing_frame_queue = SimpleQueue()
         self.process_timeout = process_timeout
         
         self.servos_movement_tracking_delay = float(servos_movement_tracking_delay)

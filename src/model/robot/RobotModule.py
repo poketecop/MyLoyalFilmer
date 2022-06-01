@@ -257,7 +257,7 @@ class Robot:
             if not self.camera.processing_frame_queue:
                 continue
 
-            frame = self.camera.processing_frame_queue.pop()
+            frame = self.camera.processing_frame_queue.get()
             cnts = self.camera.get_color_countours(frame)
 
             cnts_len = len(cnts)
@@ -327,7 +327,7 @@ class Robot:
     def save_film(self):
         while not self.camera.stop:
             if self.camera.saving_frame_queue: 
-                self.camera.result.write(self.camera.saving_frame_queue.pop())
+                self.camera.result.write(self.camera.saving_frame_queue.get())
 
     def save_film_and_color_track(self):
         # print('\n Entered color_track method.')
@@ -353,8 +353,8 @@ class Robot:
         # Read the first frame and stored as object property.
         while not self.camera.stop:
             ret, frame = self.camera.image.read()
-            self.camera.saving_frame_queue.append(frame)
-            self.camera.processing_frame_queue.append(frame)
+            self.camera.saving_frame_queue.put(frame)
+            self.camera.processing_frame_queue.put(frame)
 
         while thread1.is_alive():
             time.sleep(1)
