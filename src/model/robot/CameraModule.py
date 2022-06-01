@@ -91,6 +91,7 @@ class Camera:
     result = None
     image = None
     image_widget = None
+    frame = None
 
     # Above module constants will be stored in these properties 
     # or the constructor parameter_list dicionary values instead.
@@ -253,8 +254,8 @@ class Camera:
     def get_frame_size(self):
         # We need to set resolutions.
         # so, convert them from float to integer.
-        frame_width = int(self.image.get(3))
-        frame_height = int(self.image.get(4))
+        frame_width = int(self.image.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(self.image.get(cv2.CAP_PROP_FRAME_HEIGHT))
         
         size = (frame_width, frame_height)
 
@@ -272,7 +273,7 @@ class Camera:
 
         file_name = dt.now().strftime('%a_%d_%m_%Y_%H_%M_%S')
 
-        # print(file_name)
+        print('\n' + file_name)
 
         if self.video_format == VideoFormat.AVI.name:
             self.result = cv2.VideoWriter(VIDEOS_PATH + file_name + '.avi', VIDEO_WRITER_AVI_FOURCC, self.saving_fps, size)

@@ -71,7 +71,7 @@ class Robot:
             elif self.mode == Mode.FILM.name:
                 self.camera.film()
             elif self.mode == Mode.COLOR_TRACK.name:
-                self.color_track()
+                self.save_film_and_color_track()
             elif self.mode == Mode.TRACK_LINE_AND_COLOR_TRACK.name:
                 self.track_line_and_color_track()
             elif self.mode == Mode.CALIBRATE_CAMERA_SERVOS.name:
@@ -95,7 +95,7 @@ class Robot:
         GPIO.setwarnings(False)
 
     def track_line_and_color_track(self):
-        thread1 = threading.Thread(target = self.color_track)
+        thread1 = threading.Thread(target = self.save_film_and_color_track)
         thread1.setDaemon(True)
         thread1.start()
 
@@ -211,41 +211,15 @@ class Robot:
         self.motors.soft_stop()
 
     def color_track(self):
-        # print('\n Entered color_track method.')
-
-        self.camera.camera_servos.init_servos_position()
-        # self.camera.camera_servos.init_servos_position_gradually()
-
         t_start = time.time()
-
-        # print('\nColor track start: ' + str(t_start))
-
-        self.camera.init_film_capture()
-        self.camera.init_film_saving()
-        if self.debug:
-            self.camera.init_film_display()
-        
         times_to_be_consistent_trackable_color = 0
         times_interval_end_time = None
         delay_to_stop_after_moving_end_time = None
         delay_to_track_after_moving_end_time = None
 
         lost_consecutive_times = 0
-        while time.time() < t_start + self.process_timeout:
-            if self.camera.stop:
-                break
 
-            ret, frame = self.camera.image.read()
-
-            if not ret:
-                # Break the loop
-                break
-
-            # Write the frame into the
-            # file 'filename.avi'
-            if not self.debug:
-                self.camera.result.write(frame)
-            
+        while (not self.camera.stop) and time.time() < t_start + self.process_timeout:
             current_accurate_time = time.perf_counter()
 
             # Check delay to stop after moving servos.
@@ -280,7 +254,8 @@ class Robot:
                 # print('\nDelay to track after moving finish.')
                 delay_to_track_after_moving_end_time = None
 
-            cnts = self.camera.get_color_countours(frame)
+            frame_copy = self.camera.frame.copy()
+            cnts = self.camera.get_color_countours(frame_copy)
 
             cnts_len = len(cnts)
             # print('\nCountours: ' + str(cnts_len))
@@ -301,9 +276,8 @@ class Robot:
             
             if self.debug:
                 # Mark the detected colors
-                self.camera.mark_the_detected_colors(frame, color_x,color_y, color_width, color_height)
-                self.camera.result.write(frame)
-                self.camera.display_frame(frame)
+                self.camera.mark_the_detected_colors(frame_copy, color_x,color_y, color_width, color_height)
+                self.camera.display_frame(frame_copy)
             
             if color_width < self.camera.min_color_width_to_track or color_height < self.camera.min_color_height_to_track:
                 times_to_be_consistent_trackable_color = 0
@@ -344,7 +318,39 @@ class Robot:
                 # Set a checking delay (execution not freezed), to give the servos time to move before stopping.
                 delay_to_stop_after_moving_end_time = time.perf_counter() + self.camera.delay_to_stop_after_moving
 
+        self.camera.stop = True
+
+    def save_film_and_color_track(self):
+        # print('\n Entered color_track method.')
+
+        self.camera.camera_servos.init_servos_position()
+        # self.camera.camera_servos.init_servos_position_gradually()
+
+        # print('\nColor track start: ' + str(t_start))
+
+        self.camera.init_film_capture()
+        self.camera.init_film_saving()
+        if self.debug:
+            self.camera.init_film_display()
+
+        # Read the first frame and stored as object property.
+        ret, self.camera.frame = self.camera.image.read()
+        self.camera.result.write(self.camera.frame)
+
+        thread1 = threading.Thread(target = self.color_track)
+        thread1.setDaemon(True)
+        thread1.start()
+
+        # Write the frame into the
+        # file 'filename.avi'
+        while not self.camera.stop:
+            ret, self.camera.frame = self.camera.image.read()
+            self.camera.result.write(self.camera.frame)
+
         self.camera.finish_filming()
+
+        while thread1.is_alive():
+            time.sleep(2)
         
         return 0
 
