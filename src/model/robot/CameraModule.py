@@ -1,7 +1,7 @@
 #-*- coding:UTF-8 -*-
 
 from enum import Enum
-from queue import SimpleQueue
+from queue import LifoQueue, SimpleQueue
 import cv2
 import time
 import numpy as np
@@ -181,8 +181,13 @@ class Camera:
 
         self.set_color_to_track(color_to_track)
         self.camera_servos = CameraServosModule.CameraServos(parameter_list)
+
+        # FIFO queue for saving frames. Every frame readed must be saved in order.
         self.saving_frame_queue = SimpleQueue()
-        self.processing_frame_queue = SimpleQueue()
+        # LIFO queue for processing frames. 
+        # Only last frame readed must be processed to track the color.
+        self.processing_frame_queue = LifoQueue()
+
         self.process_timeout = process_timeout
         
         self.servos_movement_tracking_delay = float(servos_movement_tracking_delay)
