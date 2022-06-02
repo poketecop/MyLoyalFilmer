@@ -216,65 +216,69 @@ class Robot:
 
         lost_consecutive_times = 0
 
-        while (not self.camera.stop) and time.time() < t_start + self.process_timeout:
+        try:
+            while (not self.camera.stop) and time.time() < t_start + self.process_timeout:
 
-            if not self.camera.processing_frame_queue:
-                continue
+                if not self.camera.processing_frame_queue:
+                    continue
 
-            frame = self.camera.processing_frame_queue.get()
-            cnts = self.camera.get_color_countours(frame)
+                frame = self.camera.processing_frame_queue.get()
+                cnts = self.camera.get_color_countours(frame)
 
-            cnts_len = len(cnts)
-            # print('\nCountours: ' + str(cnts_len))
+                cnts_len = len(cnts)
+                # print('\nCountours: ' + str(cnts_len))
 
-            if cnts_len <= 0:
-                times_to_be_consistent_trackable_color = 0
+                if cnts_len <= 0:
+                    times_to_be_consistent_trackable_color = 0
 
-                lost_consecutive_times += 1
-                if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
-                    if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
-                        time.sleep(self.camera.delay_to_stop_after_moving)
-                        self.camera.camera_servos.stop()
-                        time.sleep(self.camera.delay_to_track_after_moving)
+                    lost_consecutive_times += 1
+                    if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
+                        if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
+                            time.sleep(self.camera.delay_to_stop_after_moving)
+                            self.camera.camera_servos.stop()
+                            time.sleep(self.camera.delay_to_track_after_moving)
+                    
+                    continue
                 
-                continue
-            
-            color_x, color_y, color_width, color_height = self.camera.get_outer_coordinates(cnts)
+                color_x, color_y, color_width, color_height = self.camera.get_outer_coordinates(cnts)
 
-            # print('\nColor x: ' + str(color_x) + ' y: ' + str(color_y) + ' width: ' + str(color_width) + ' height: ' + str(color_height))
-            
-            if self.debug:
-                # Mark the detected colors.
-                frame_copy = frame.copy()
-                self.camera.mark_the_detected_colors(frame_copy, color_x,color_y, color_width, color_height)
-                self.camera.display_frame(frame_copy)
-            
-            # Check if the detected color is large enough.
-            if color_width < self.camera.min_color_width_to_track or color_height < self.camera.min_color_height_to_track:
-                times_to_be_consistent_trackable_color = 0
+                # print('\nColor x: ' + str(color_x) + ' y: ' + str(color_y) + ' width: ' + str(color_width) + ' height: ' + str(color_height))
                 
-                lost_consecutive_times += 1
-                if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
-                    if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
-                        time.sleep(self.camera.delay_to_stop_after_moving)
-                        self.camera.camera_servos.stop()
-                        time.sleep(self.camera.delay_to_track_after_moving)
+                if self.debug:
+                    # Mark the detected colors.
+                    frame_copy = frame.copy()
+                    self.camera.mark_the_detected_colors(frame_copy, color_x,color_y, color_width, color_height)
+                    self.camera.display_frame(frame_copy)
                 
-                continue
+                # Check if the detected color is large enough.
+                if color_width < self.camera.min_color_width_to_track or color_height < self.camera.min_color_height_to_track:
+                    times_to_be_consistent_trackable_color = 0
+                    
+                    lost_consecutive_times += 1
+                    if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
+                        if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
+                            time.sleep(self.camera.delay_to_stop_after_moving)
+                            self.camera.camera_servos.stop()
+                            time.sleep(self.camera.delay_to_track_after_moving)
+                    
+                    continue
 
-            lost_consecutive_times = 0
+                lost_consecutive_times = 0
+                    
+                # Consistent trackable color.
+                if times_to_be_consistent_trackable_color < self.camera.servos_movement_times_delay:
+                    time.sleep(self.camera.servos_movement_tracking_delay)
+                    continue
                 
-            # Consistent trackable color.
-            if times_to_be_consistent_trackable_color < self.camera.servos_movement_times_delay:
-                time.sleep(self.camera.servos_movement_tracking_delay)
-                continue
-            
-            if self.camera.check_and_move_servos(color_x, color_y, color_width, color_height, self.camera.degrees_to_move_to_track_color):
-                time.sleep(self.camera.delay_to_stop_after_moving)
-                self.camera.camera_servos.stop()
-                time.sleep(self.camera.delay_to_track_after_moving)
+                if self.camera.check_and_move_servos(color_x, color_y, color_width, color_height, self.camera.degrees_to_move_to_track_color):
+                    time.sleep(self.camera.delay_to_stop_after_moving)
+                    self.camera.camera_servos.stop()
+                    time.sleep(self.camera.delay_to_track_after_moving)
 
-        self.camera.stop = True
+            self.camera.stop = True
+        except Exception as e:
+            print('\nError in color_track: ' + str(e))
+            print('\n' + traceback.format_exc())
 
     def save_film(self):
         while not self.camera.stop:
