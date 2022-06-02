@@ -82,6 +82,8 @@ VIDEOS_PATH = '/home/pi/Videos/'
 
 SAVING_FRAME_INTERVAL = 3
 
+LAST_FRAME_AVAILABLE_DELAY = 0.008
+
 class VideoFormat(Enum):
     AVI = 1
     MP4 = 2
@@ -124,6 +126,7 @@ class Camera:
     brightness = None
     contrast = None
     saving_frame_interval = None
+    last_frame_available_delay = None
 
     stop = False
 
@@ -134,7 +137,7 @@ class Camera:
         delay_to_stop_after_moving = DELAY_TO_STOP_AFTER_MOVING, delay_to_track_after_moving = DELAY_TO_TRACK_AFTER_MOVING, 
         consistent_lost_consecutive_times = CONSISTENT_LOST_CONSECUTIVE_TIMES, capture_fps = CAPTURE_FPS,
         saving_fps = SAVING_FPS, video_format = VideoFormat.AVI.name, brightness = BRIGHTNESS, contrast = CONTRAST,
-        saving_frame_interval = SAVING_FRAME_INTERVAL):
+        saving_frame_interval = SAVING_FRAME_INTERVAL, last_frame_available_delay = LAST_FRAME_AVAILABLE_DELAY):
         ''' Uses module constants or parameter_list dictionary parameters to set self properties.
         '''
         if parameter_list:            
@@ -178,6 +181,8 @@ class Camera:
                 contrast = parameter_list['contrast']
             if 'saving_frame_interval' in parameter_list:
                 saving_frame_interval = parameter_list['saving_frame_interval']
+            if 'last_frame_available_delay' in parameter_list:
+                last_frame_available_delay = parameter_list['last_frame_available_delay']
 
         self.set_color_to_track(color_to_track)
         self.camera_servos = CameraServosModule.CameraServos(parameter_list)
@@ -217,6 +222,7 @@ class Camera:
         self.brightness = int(brightness)
         self.contrast = int(contrast)
         self.saving_frame_interval = int(saving_frame_interval)
+        self.last_frame_available_delay = int(last_frame_available_delay)
         
     def set_color_to_track(self, color_to_track):
         if color_to_track == TrackableColor.RED.name:
