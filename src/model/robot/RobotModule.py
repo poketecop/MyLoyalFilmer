@@ -326,8 +326,9 @@ class Robot:
 
     def save_film(self):
         while not self.camera.stop:
-            if self.camera.saving_frame_queue: 
+            while self.camera.saving_frame_queue: 
                 self.camera.result.write(self.camera.saving_frame_queue.get())
+            time.sleep(self.camera.saving_frame_interval)
 
     def save_film_and_color_track(self):
         # print('\n Entered color_track method.')

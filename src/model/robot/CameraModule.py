@@ -80,6 +80,8 @@ CONSISTENT_LOST_CONSECUTIVE_TIMES = 2
 
 VIDEOS_PATH = '/home/pi/Videos/'
 
+SAVING_FRAME_INTERVAL = 3
+
 class VideoFormat(Enum):
     AVI = 1
     MP4 = 2
@@ -121,6 +123,7 @@ class Camera:
     video_format = None
     brightness = None
     contrast = None
+    saving_frame_interval = None
 
     stop = False
 
@@ -130,7 +133,8 @@ class Camera:
         acceptable_percentage_margin_x = ACCEPTABLE_PERCENTAGE_MARGIN_X, acceptable_percentage_margin_y = ACCEPTABLE_PERCENTAGE_MARGIN_Y, degrees_to_move_to_track_color = DEGREES_TO_MOVE_TO_TRACK_COLOR, 
         delay_to_stop_after_moving = DELAY_TO_STOP_AFTER_MOVING, delay_to_track_after_moving = DELAY_TO_TRACK_AFTER_MOVING, 
         consistent_lost_consecutive_times = CONSISTENT_LOST_CONSECUTIVE_TIMES, capture_fps = CAPTURE_FPS,
-        saving_fps = SAVING_FPS, video_format = VideoFormat.AVI.name, brightness = BRIGHTNESS, contrast = CONTRAST):
+        saving_fps = SAVING_FPS, video_format = VideoFormat.AVI.name, brightness = BRIGHTNESS, contrast = CONTRAST,
+        saving_frame_interval = SAVING_FRAME_INTERVAL):
         ''' Uses module constants or parameter_list dictionary parameters to set self properties.
         '''
         if parameter_list:            
@@ -172,6 +176,8 @@ class Camera:
                 brightness = parameter_list['brightness']
             if 'contrast' in parameter_list:
                 contrast = parameter_list['contrast']
+            if 'saving_frame_interval' in parameter_list:
+                saving_frame_interval = parameter_list['saving_frame_interval']
 
         self.set_color_to_track(color_to_track)
         self.camera_servos = CameraServosModule.CameraServos(parameter_list)
@@ -205,6 +211,7 @@ class Camera:
         self.video_format = video_format
         self.brightness = int(brightness)
         self.contrast = int(contrast)
+        self.saving_frame_interval = int(saving_frame_interval)
         
     def set_color_to_track(self, color_to_track):
         if color_to_track == TrackableColor.RED.name:
