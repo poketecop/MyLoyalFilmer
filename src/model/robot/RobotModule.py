@@ -219,17 +219,11 @@ class Robot:
         try:
             while (not self.camera.stop) and time.time() < t_start + self.process_timeout:
 
-                if not self.camera.processing_frame_queue:
+                if not self.camera.processing_frame:
+                    time.sleep(self.camera.last_frame_available_delay)
                     continue
 
-                # Although the queue is a LIFO, if the queue had several values,
-                # and the last one was processed and the next frame was not readed yet,
-                # then a previous frame will be processed.
-                # To not complicate the thing with queues, there is a delay at the end of the loop
-                # in case the delays due to moving are not triggered so the frame should be the last one.
-                # Take in account the time to process the frame.
-                frame = self.camera.processing_frame_queue.get()
-                cnts = self.camera.get_color_countours(frame)
+                cnts = self.camera.get_color_countours(self.camera.processing_frame)
 
                 cnts_len = len(cnts)
                 # print('\nCountours: ' + str(cnts_len))
@@ -252,7 +246,7 @@ class Robot:
                 
                 if self.debug:
                     # Mark the detected colors.
-                    frame_copy = frame.copy()
+                    frame_copy = self.camera.processing_frame.copy()
                     self.camera.mark_the_detected_colors(frame_copy, color_x,color_y, color_width, color_height)
                     self.camera.display_frame(frame_copy)
                 
@@ -281,8 +275,6 @@ class Robot:
                     self.camera.camera_servos.stop()
                     time.sleep(self.camera.delay_to_track_after_moving)
                     continue
-                
-                time.sleep(self.camera.last_frame_available_delay)
 
             self.camera.stop = True
         except Exception as e:
@@ -320,7 +312,7 @@ class Robot:
         while not self.camera.stop:
             ret, frame = self.camera.image.read()
             self.camera.saving_frame_queue.put(frame)
-            self.camera.processing_frame_queue.put(frame)
+            self.camera.processing_frame = frame
 
         while thread1.is_alive():
             time.sleep(1)

@@ -94,7 +94,7 @@ class Camera:
     result = None
     image = None
     image_widget = None
-    processing_frame_queue = None
+    processing_frame = None
     saving_frame_queue = None
 
     # Above module constants will be stored in these properties 
@@ -189,9 +189,6 @@ class Camera:
 
         # FIFO queue for saving frames. Every frame readed must be saved in order.
         self.saving_frame_queue = SimpleQueue()
-        # LIFO queue for processing frames. 
-        # Only last frame readed must be processed to track the color.
-        self.processing_frame_queue = LifoQueue()
 
         self.process_timeout = process_timeout
         
