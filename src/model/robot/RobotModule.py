@@ -213,46 +213,10 @@ class Robot:
     def color_track(self):
         t_start = time.time()
         times_to_be_consistent_trackable_color = 0
-        times_interval_end_time = None
-        delay_to_stop_after_moving_end_time = None
-        delay_to_track_after_moving_end_time = None
 
         lost_consecutive_times = 0
 
         while (not self.camera.stop) and time.time() < t_start + self.process_timeout:
-            current_accurate_time = time.perf_counter()
-
-            # Check delay to stop after moving servos.
-            if delay_to_stop_after_moving_end_time:
-                # # print current_accurate_time
-                # print('\nCurrent time: ' + str(current_accurate_time))
-                # # print delay_to_stop_after_moving_end_time
-                # print('\nDelay to stop after moving end time: ' + str(delay_to_stop_after_moving_end_time))
-                if current_accurate_time < delay_to_stop_after_moving_end_time:
-                    # Keep waiting
-                    # print('\nWaiting for delay to stop after moving.')
-                    continue
-
-                # Waiting finish. Reset the time.
-                # print('\nDelay to stop after moving finish.')
-                delay_to_stop_after_moving_end_time = None
-                self.camera.camera_servos.stop()
-                # Set delay to track after moving servos to avoid tracking while moving servos.
-                delay_to_track_after_moving_end_time = current_accurate_time + self.camera.delay_to_track_after_moving
-
-            # Check delay to track after moving servos.
-            if delay_to_track_after_moving_end_time:
-                # # print current_accurate_time
-                # print('\nCurrent time: ' + str(current_accurate_time))
-                # # print delay_to_track_after_moving_end_time
-                # print('\nDelay to track after moving end time: ' + str(delay_to_track_after_moving_end_time))
-                if current_accurate_time < delay_to_track_after_moving_end_time:
-                    # Keep waiting
-                    # print('\nWaiting for delay to track after moving.')
-                    continue
-                # Waiting finish. Reset the time.
-                # print('\nDelay to track after moving finish.')
-                delay_to_track_after_moving_end_time = None
 
             if not self.camera.processing_frame_queue:
                 continue
@@ -269,7 +233,9 @@ class Robot:
                 lost_consecutive_times += 1
                 if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
                     if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
-                        delay_to_stop_after_moving_end_time = time.perf_counter() + self.camera.delay_to_stop_after_moving
+                        time.sleep(self.camera.delay_to_stop_after_moving)
+                        self.camera.camera_servos.stop()
+                        time.sleep(self.camera.delay_to_track_after_moving)
                 
                 continue
             
@@ -278,18 +244,21 @@ class Robot:
             # print('\nColor x: ' + str(color_x) + ' y: ' + str(color_y) + ' width: ' + str(color_width) + ' height: ' + str(color_height))
             
             if self.debug:
-                # Mark the detected colors
+                # Mark the detected colors.
                 frame_copy = frame.copy()
                 self.camera.mark_the_detected_colors(frame_copy, color_x,color_y, color_width, color_height)
                 self.camera.display_frame(frame_copy)
             
+            # Check if the detected color is large enough.
             if color_width < self.camera.min_color_width_to_track or color_height < self.camera.min_color_height_to_track:
                 times_to_be_consistent_trackable_color = 0
                 
                 lost_consecutive_times += 1
                 if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
                     if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
-                        delay_to_stop_after_moving_end_time = time.perf_counter() + self.camera.delay_to_stop_after_moving
+                        time.sleep(self.camera.delay_to_stop_after_moving)
+                        self.camera.camera_servos.stop()
+                        time.sleep(self.camera.delay_to_track_after_moving)
                 
                 continue
 
@@ -297,30 +266,13 @@ class Robot:
                 
             # Consistent trackable color.
             if times_to_be_consistent_trackable_color < self.camera.servos_movement_times_delay:
-                # Can't use sleep if not necessary to keep capturing video
-                # So we will check intervals of SERVOS_MOVEMENT_TRACKING_DELAY until SERVOS_MOVEMENT_TIMES_DELAY times.
-                if not times_interval_end_time:
-                    times_interval_end_time = time.perf_counter() + self.camera.servos_movement_tracking_delay
-                    # Calc for an interval.
-                    continue
-                
-                # Check for an interval.
-                if time.perf_counter() < times_interval_end_time:
-                    continue
-
-                # One less time to be a consistent trackable color.
-                times_to_be_consistent_trackable_color += 1
-                # Reset the interval.
-                times_interval_end_time = None
+                time.sleep(self.camera.servos_movement_tracking_delay)
                 continue
-
-            # Reset the times.
-            times_to_be_consistent_trackable_color = 0
-            times_interval_end_time = None
             
             if self.camera.check_and_move_servos(color_x, color_y, color_width, color_height, self.camera.degrees_to_move_to_track_color):
-                # Set a checking delay (execution not freezed), to give the servos time to move before stopping.
-                delay_to_stop_after_moving_end_time = time.perf_counter() + self.camera.delay_to_stop_after_moving
+                time.sleep(self.camera.delay_to_stop_after_moving)
+                self.camera.camera_servos.stop()
+                time.sleep(self.camera.delay_to_track_after_moving)
 
         self.camera.stop = True
 
