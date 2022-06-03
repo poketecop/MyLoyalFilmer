@@ -12,6 +12,7 @@ import traceback
 DEFAULT_PROCESS_TIMEOUT = 10
 DEFAULT_INITIAL_DELAY = 2
 DEFAULT_TRACKING_LAPS = 1
+FINAL_DELAY = 5
 
 class Mode(Enum):
     TRACK_LINE = 1
@@ -35,7 +36,7 @@ class Robot:
 
     tracking_finished = False
 
-    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False):
+    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False, final_delay = FINAL_DELAY):
         if parameter_list:
             if 'mode' in parameter_list:
                 mode = parameter_list['mode']
@@ -51,6 +52,13 @@ class Robot:
 
             if 'debug' in parameter_list:
                 debug = parameter_list['debug'].lower() == 'yes'
+
+            if 'final_delay' in parameter_list:
+                final_delay = parameter_list['final_delay']
+        
+        self.motors = Motors(parameter_list)
+        self.tracking_module = LineTrackerModule.LineTracker(parameter_list)
+        self.camera = CameraModule.Camera(parameter_list, process_timeout = process_timeout)
         
         self.init_pin_numbering_mode()
         self.process_timeout = int(process_timeout)
@@ -58,10 +66,7 @@ class Robot:
         self.tracking_laps = int(tracking_laps)
         self.mode = mode
         self.debug = debug
-
-        self.motors = Motors(parameter_list)
-        self.tracking_module = LineTrackerModule.LineTracker(parameter_list)
-        self.camera = CameraModule.Camera(parameter_list, process_timeout = process_timeout)
+        self.final_delay = int(final_delay)
         
     def play(self):
         try:
@@ -99,6 +104,10 @@ class Robot:
         thread1.start()
 
         self.track_line()
+
+        if self.final_delay:
+            time.sleep(self.final_delay)
+            
         self.camera.stop = True
 
         while thread1.is_alive():
