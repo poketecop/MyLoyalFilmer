@@ -294,11 +294,10 @@ class Robot:
 
     def save_film(self):
         while self.camera.saving_frame_queue or not self.camera.stop:
-            if not self.camera.saving_frame_queue:
-                time.sleep(self.camera.saving_frame_interval)
-                continue
-            self.camera.result.write(self.camera.saving_frame_queue.popleft())
-            
+            if self.camera.saving_frame_queue:
+                self.camera.result.write(self.camera.saving_frame_queue.popleft())
+            time.sleep(self.camera.saving_frame_interval)
+
         print('\nSave film finished.')
 
     def save_film_and_color_track(self):
