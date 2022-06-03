@@ -275,6 +275,8 @@ class Robot:
                     time.sleep(self.camera.delay_to_track_after_moving)
                     continue
 
+                time.sleep(self.camera.last_frame_available_delay)
+
             self.camera.stop = True
         except Exception as e:
             print('\nError in color_track: ' + str(e))
