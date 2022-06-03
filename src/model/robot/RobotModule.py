@@ -55,12 +55,12 @@ class Robot:
 
             if 'final_delay' in parameter_list:
                 final_delay = parameter_list['final_delay']
-        
+        self.init_pin_numbering_mode()
+
         self.motors = Motors(parameter_list)
         self.tracking_module = LineTrackerModule.LineTracker(parameter_list)
         self.camera = CameraModule.Camera(parameter_list, process_timeout = process_timeout)
-        
-        self.init_pin_numbering_mode()
+    
         self.process_timeout = int(process_timeout)
         self.initial_delay = int(initial_delay)
         self.tracking_laps = int(tracking_laps)
@@ -78,8 +78,6 @@ class Robot:
                 self.save_film_and_color_track()
             elif self.mode == Mode.TRACK_LINE_AND_COLOR_TRACK.name:
                 self.track_line_and_color_track()
-            elif self.mode == Mode.CALIBRATE_CAMERA_SERVOS.name:
-                self.camera.camera_servos.calibrate_servos()
             elif self.mode == Mode.TEST_CAMERA_SERVO_CONTROL.name:
                 self.camera.camera_servos.test_servo_control()
             elif self.mode == Mode.TRACK_LINE_AND_TEST_CAMERA_SERVO_CONTROL.name:
@@ -224,13 +222,11 @@ class Robot:
 
         lost_consecutive_times = 0
 
+        while self.camera.processing_frame is None and time.time() < t_start + self.process_timeout:
+            time.sleep(self.camera.last_frame_available_delay)
+
         try:
             while (not self.camera.stop) and time.time() < t_start + self.process_timeout:
-
-                if not self.camera.processing_frame:
-                    time.sleep(self.camera.last_frame_available_delay)
-                    continue
-
                 cnts = self.camera.get_color_countours(self.camera.processing_frame)
 
                 cnts_len = len(cnts)
