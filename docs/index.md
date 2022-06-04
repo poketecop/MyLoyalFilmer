@@ -102,6 +102,8 @@ python3 main.py -mode TEST_CAMERA_SERVO_CONTROL -alternative_camera_servos yes
 1280*960 resolution seems equal or even worse, and frame rate is worse.
 640*480 resolution is good.
 
+FPSs are consistently better with AVI format than with MP4, but only 0.1 - 0.2 FPS.
+
  v4l2-ctl --list-formats-ext
 ioctl: VIDIOC_ENUM_FMT
         Type: Video Capture

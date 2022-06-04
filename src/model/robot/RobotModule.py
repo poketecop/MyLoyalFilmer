@@ -228,6 +228,8 @@ class Robot:
 
         lost_consecutive_times = 0
 
+        color_tracked = False
+        
         while self.camera.processing_frame is None and time.time() < t_start + self.process_timeout:
             time.sleep(self.camera.last_frame_available_delay)
 
@@ -242,11 +244,12 @@ class Robot:
                     times_to_be_consistent_trackable_color = 0
 
                     lost_consecutive_times += 1
-                    if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
-                        if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
-                            time.sleep(self.camera.delay_to_stop_after_moving)
-                            self.camera.camera_servos.stop()
-                            time.sleep(self.camera.delay_to_track_after_moving)
+                    if color_tracked:
+                        if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
+                            if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
+                                time.sleep(self.camera.delay_to_stop_after_moving)
+                                self.camera.camera_servos.stop()
+                                time.sleep(self.camera.delay_to_track_after_moving)
                     
                     continue
                 
@@ -264,23 +267,29 @@ class Robot:
                 if color_width < self.camera.min_color_width_to_track or color_height < self.camera.min_color_height_to_track:
                     times_to_be_consistent_trackable_color = 0
                     
-                    lost_consecutive_times += 1
-                    if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
-                        if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
-                            time.sleep(self.camera.delay_to_stop_after_moving)
-                            self.camera.camera_servos.stop()
-                            time.sleep(self.camera.delay_to_track_after_moving)
-                    
-                    continue
+                    if color_tracked:
+                        lost_consecutive_times += 1
+                        if lost_consecutive_times >= self.camera.consistent_lost_consecutive_times:
+                            if self.camera.camera_servos.move_in_current_direction(self.camera.degrees_to_move_to_track_color):
+                                time.sleep(self.camera.delay_to_stop_after_moving)
+                                self.camera.camera_servos.stop()
+                                time.sleep(self.camera.delay_to_track_after_moving)
+                        
+                        continue
 
                 lost_consecutive_times = 0
                     
                 # Consistent trackable color.
                 if times_to_be_consistent_trackable_color < self.camera.servos_movement_times_delay:
+                    # One less time to be a consistent trackable color.
+                    times_to_be_consistent_trackable_color += 1
                     time.sleep(self.camera.servos_movement_tracking_delay)
                     continue
                 
+                times_to_be_consistent_trackable_color = 0
+
                 if self.camera.check_and_move_servos(color_x, color_y, color_width, color_height, self.camera.degrees_to_move_to_track_color):
+                    color_tracked = True
                     time.sleep(self.camera.delay_to_stop_after_moving)
                     self.camera.camera_servos.stop()
                     time.sleep(self.camera.delay_to_track_after_moving)
@@ -295,14 +304,6 @@ class Robot:
             print('\nError in color_track: ' + str(e))
             print('\n' + traceback.format_exc())
 
-    def save_film(self):
-        while self.camera.saving_frame_queue or not self.camera.stop:
-            if self.camera.saving_frame_queue:
-                self.camera.result.write(self.camera.saving_frame_queue.popleft())
-            time.sleep(self.camera.saving_frame_interval)
-
-        print('\nSave film finished.')
-
     def save_film_and_color_track(self):
         print('\n Entered color_track method.')
 
@@ -314,7 +315,7 @@ class Robot:
         if self.debug:
             self.camera.init_film_display()
 
-        thread1 = threading.Thread(target = self.save_film)
+        thread1 = threading.Thread(target = self.camera.save_film)
         thread1.setDaemon(True)
         thread1.start()
 
@@ -323,20 +324,25 @@ class Robot:
         thread2.start()
 
         # Read the first frame and stored as object property.
+        t_start = time.time()
+        i = 0
         while not self.camera.stop:
             ret, frame = self.camera.image.read()
             self.camera.saving_frame_queue.append(frame)
             self.camera.processing_frame = frame
+            i += 1
+
+        self.camera.finish_film_capture()
+        self.camera.video_capture_finished = True
 
         print('\nReading videoCapture finish.')
+        print("\nFPS: " + str(i / (time.time() - t_start)))
 
         while thread1.is_alive():
             time.sleep(1)
 
         while thread2.is_alive():
             time.sleep(1)
-
-        self.camera.finish_filming()
 
         return 0
 

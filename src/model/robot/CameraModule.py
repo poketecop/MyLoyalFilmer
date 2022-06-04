@@ -45,6 +45,8 @@ VIDEO_WRITER_MP4_FOURCC = cv2.VideoWriter.fourcc(*'MP4V')
 
 SERVOS_MOVEMENT_TRACKING_DELAY = 0.008
 SERVOS_MOVEMENT_TIMES_DELAY = 1
+
+#TODO: Should be percentage too
 MIN_COLOR_WIDTH_TO_TRACK = 40
 MIN_COLOR_HEIGHT_TO_TRACK = 50
 
@@ -80,7 +82,7 @@ CONSISTENT_LOST_CONSECUTIVE_TIMES = 2
 
 VIDEOS_PATH = '/home/pi/Videos/'
 
-SAVING_FRAME_INTERVAL = 3
+SAVING_FRAME_INTERVAL = 0.5
 
 LAST_FRAME_AVAILABLE_DELAY = 0.008
 
@@ -128,7 +130,8 @@ class Camera:
     saving_frame_interval = None
     last_frame_available_delay = None
 
-    stop = False
+    stop = None
+    video_capture_finished = None
 
     def __init__(self, parameter_list, process_timeout, color_to_track = TrackableColor.RED.name, servos_movement_tracking_delay = SERVOS_MOVEMENT_TRACKING_DELAY, 
         servos_movement_times_delay = SERVOS_MOVEMENT_TIMES_DELAY, min_color_width_to_track = MIN_COLOR_WIDTH_TO_TRACK, 
@@ -204,10 +207,14 @@ class Camera:
         acceptable_margin_y = (int(acceptable_percentage_margin_y) * Y_RESOLUTION)/100
 
         self.left_acceptable_x = self.center_x - acceptable_margin_x
+        print("\nleft_acceptable_x: " + str(self.left_acceptable_x))
         self.right_acceptable_x = self.center_x + acceptable_margin_x
+        print("\nright_acceptable_x: " + str(self.right_acceptable_x))
 
         self.up_acceptable_y = self.center_y - acceptable_margin_y
+        print("\nup_acceptable_y: " + str(self.up_acceptable_y))
         self.down_acceptable_y = self.center_y + acceptable_margin_y
+        print("\ndown_acceptable_y: " + str(self.down_acceptable_y))
 
         self.degrees_to_move_to_track_color = int(degrees_to_move_to_track_color)
         self.delay_to_stop_after_moving = float(delay_to_stop_after_moving)
@@ -216,10 +223,13 @@ class Camera:
         self.capture_fps = int(capture_fps)
         self.saving_fps = int(saving_fps)
         self.video_format = video_format
-        self.brightness = int(brightness)
-        self.contrast = int(contrast)
-        self.saving_frame_interval = int(saving_frame_interval)
+        self.brightness = False if brightness == 'no' else int(brightness)
+        self.contrast = False if contrast == 'no' else  int(contrast)
+        self.saving_frame_interval = float(saving_frame_interval)
         self.last_frame_available_delay = int(last_frame_available_delay)
+
+        self.stop = False
+        self.video_capture_finished = False
         
     def set_color_to_track(self, color_to_track):
         if color_to_track == TrackableColor.RED.name:
@@ -249,10 +259,11 @@ class Camera:
 
     def init_film_capture(self):
         self.image = cv2.VideoCapture(-1)
-        print('\Film capture initied.')
+        print('\nFilm capture initied.')
         if not self.image.isOpened():
             raise IOError("Cannot open webcam")
 
+        
         self.image.set(cv2.CAP_PROP_FRAME_WIDTH , X_RESOLUTION)
         self.image.set(cv2.CAP_PROP_FRAME_HEIGHT, Y_RESOLUTION)
         self.image.set(cv2.CAP_PROP_FPS, self.capture_fps)   #set frame
@@ -262,8 +273,10 @@ class Camera:
         elif self.video_format == VideoFormat.MP4.name:
             self.image.set(cv2.CAP_PROP_FOURCC, VIDEO_WRITER_MP4_FOURCC)
         
-        self.image.set(cv2.CAP_PROP_BRIGHTNESS, self.brightness) #set brihtgness -64 - 64  0.0
-        self.image.set(cv2.CAP_PROP_CONTRAST, self.contrast)   #set contrast -64 - 64  2.0
+        if self.brightness != False:
+            self.image.set(cv2.CAP_PROP_BRIGHTNESS, self.brightness) #set brihtgness -64 - 64  0.0
+        if self.contrast != False:
+            self.image.set(cv2.CAP_PROP_CONTRAST, self.contrast)   #set contrast -64 - 64  2.0
 
     def get_frame_size(self):
         # We need to set resolutions.
@@ -312,6 +325,19 @@ class Camera:
         self.result.release()
         print("The video was successfully saved")
     
+    def save_film(self):
+        while True:
+            if self.saving_frame_queue:
+                self.result.write(self.saving_frame_queue.popleft())
+            else:
+                if self.video_capture_finished:
+                    break
+
+            if not self.video_capture_finished and self.saving_frame_interval:
+                time.sleep(self.saving_frame_interval)
+
+        self.finish_film_saving()
+        print('\nSave film finished.')
 
     def film(self):
         t_start = time.time()
