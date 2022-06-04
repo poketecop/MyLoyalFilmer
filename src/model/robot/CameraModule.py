@@ -412,6 +412,8 @@ class Camera:
         while time.time() < t_start + self.process_timeout:
             self.image.read()
             i += 1
+
+        print("\nFPS: " + str(i / (time.time() - t_start)))
         
         self.finish_film_capture()
 
