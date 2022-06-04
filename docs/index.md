@@ -7,6 +7,9 @@ OpenCV, Raspberry PI, Yahboom G1 Tank loyal filmer project.
     py -m pip install -r requirements.txt
 ```
 
+## Battery
+The battery takes approximately 1 hour and 10 minutes to charge.
+
 ### Color track test
 
 Camera image is mirrored.

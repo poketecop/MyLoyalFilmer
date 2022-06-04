@@ -56,12 +56,12 @@ class Robot:
 
             if 'final_delay' in parameter_list:
                 final_delay = parameter_list['final_delay']
-        
+        self.init_pin_numbering_mode()
+
         self.motors = Motors(parameter_list)
         self.tracking_module = LineTrackerModule.LineTracker(parameter_list)
         self.camera = CameraModule.Camera(parameter_list, process_timeout = process_timeout)
-        
-        self.init_pin_numbering_mode()
+    
         self.process_timeout = int(process_timeout)
         self.initial_delay = int(initial_delay)
         self.tracking_laps = int(tracking_laps)
@@ -79,8 +79,6 @@ class Robot:
                 self.save_film_and_color_track()
             elif self.mode == Mode.TRACK_LINE_AND_COLOR_TRACK.name:
                 self.track_line_and_color_track()
-            elif self.mode == Mode.CALIBRATE_CAMERA_SERVOS.name:
-                self.camera.camera_servos.calibrate_servos()
             elif self.mode == Mode.TEST_CAMERA_SERVO_CONTROL.name:
                 self.camera.camera_servos.test_servo_control()
             elif self.mode == Mode.TRACK_LINE_AND_TEST_CAMERA_SERVO_CONTROL.name:
@@ -92,6 +90,7 @@ class Robot:
             print(error)
             print('\n\n' + traceback.format_exc())
         finally:
+            print('\n*** Finish ***')
             GPIO.cleanup()
     
     def init_pin_numbering_mode(self):
@@ -208,12 +207,12 @@ class Robot:
                     self.tracking_module.consecutive_tracking_option_times += 1
                    
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
-                        # # print consecutive_tracking_option_times
-                        # print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
-                        # # print track_lost_consecutive_times
-                        # print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
+                        # print consecutive_tracking_option_times
+                        print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
+                        # print track_lost_consecutive_times
+                        print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
 
-                        # print('\nTrack lost')
+                        print('\nTrack lost')
                         break
                 else:
                     self.tracking_module.consecutive_tracking_option_times = 0
@@ -223,21 +222,21 @@ class Robot:
 
     def color_track(self):
         t_start = time.time()
+        print('\nColor track start: ' + str(t_start))
+
         times_to_be_consistent_trackable_color = 0
 
         lost_consecutive_times = 0
 
+        while self.camera.processing_frame is None and time.time() < t_start + self.process_timeout:
+            time.sleep(self.camera.last_frame_available_delay)
+
         try:
             while (not self.camera.stop) and time.time() < t_start + self.process_timeout:
-
-                if not self.camera.processing_frame:
-                    time.sleep(self.camera.last_frame_available_delay)
-                    continue
-
                 cnts = self.camera.get_color_countours(self.camera.processing_frame)
 
                 cnts_len = len(cnts)
-                # print('\nCountours: ' + str(cnts_len))
+                print('\nCountours: ' + str(cnts_len))
 
                 if cnts_len <= 0:
                     times_to_be_consistent_trackable_color = 0
@@ -253,7 +252,7 @@ class Robot:
                 
                 color_x, color_y, color_width, color_height = self.camera.get_outer_coordinates(cnts)
 
-                # print('\nColor x: ' + str(color_x) + ' y: ' + str(color_y) + ' width: ' + str(color_width) + ' height: ' + str(color_height))
+                print('\nColor x: ' + str(color_x) + ' y: ' + str(color_y) + ' width: ' + str(color_width) + ' height: ' + str(color_height))
                 
                 if self.debug:
                     # Mark the detected colors.
@@ -290,23 +289,25 @@ class Robot:
                 time.sleep(self.camera.last_frame_available_delay)
 
             self.camera.stop = True
+
+            print('\n Color track finish.')
         except Exception as e:
             print('\nError in color_track: ' + str(e))
             print('\n' + traceback.format_exc())
 
     def save_film(self):
-        while not self.camera.stop:
-            while self.camera.saving_frame_queue: 
-                self.camera.result.write(self.camera.saving_frame_queue.get())
+        while self.camera.saving_frame_queue or not self.camera.stop:
+            if self.camera.saving_frame_queue:
+                self.camera.result.write(self.camera.saving_frame_queue.popleft())
             time.sleep(self.camera.saving_frame_interval)
 
+        print('\nSave film finished.')
+
     def save_film_and_color_track(self):
-        # print('\n Entered color_track method.')
+        print('\n Entered color_track method.')
 
         self.camera.camera_servos.init_servos_position()
         # self.camera.camera_servos.init_servos_position_gradually()
-
-        # print('\nColor track start: ' + str(t_start))
 
         self.camera.init_film_capture()
         self.camera.init_film_saving()
@@ -324,8 +325,10 @@ class Robot:
         # Read the first frame and stored as object property.
         while not self.camera.stop:
             ret, frame = self.camera.image.read()
-            self.camera.saving_frame_queue.put(frame)
+            self.camera.saving_frame_queue.append(frame)
             self.camera.processing_frame = frame
+
+        print('\nReading videoCapture finish.')
 
         while thread1.is_alive():
             time.sleep(1)
@@ -338,15 +341,15 @@ class Robot:
         return 0
 
     def chech_test_position(self, color_x, color_y, i):
-        # print('\n¿Are you in the desired' + str(i) + ' test position? Y/N:N')
+        print('\n¿Are you in the desired' + str(i) + ' test position? Y/N:N')
 
         in_position = input()
 
         if not in_position or in_position.upper == 'N':
-            # print('\nMove to the desired' + str(i) + ' test position.')
+            print('\nMove to the desired' + str(i) + ' test position.')
             return i
         
-        # print('\nWrite down X and Y value: X = ' + str(color_x) + ' Y = ' + str(color_y))
+        print('\nWrite down X and Y value: X = ' + str(color_x) + ' Y = ' + str(color_y))
 
         return i + 1
 
