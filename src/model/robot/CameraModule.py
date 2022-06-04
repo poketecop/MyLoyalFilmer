@@ -403,6 +403,17 @@ class Camera:
             moved = True
 
         return moved
+    
+    def test_fps(self):
+        self.init_film_capture()
+        t_start = time.time()
+        i = 0
+        
+        while time.time() < t_start + self.process_timeout:
+            self.image.read()
+            i += 1
+        
+        self.finish_film_capture()
 
 
 

@@ -22,6 +22,7 @@ class Mode(Enum):
     CALIBRATE_CAMERA_SERVOS = 5
     TEST_CAMERA_SERVO_CONTROL = 7
     TRACK_LINE_AND_TEST_CAMERA_SERVO_CONTROL = 9
+    TEST_FPS = 10
 
 class Robot:
 
@@ -84,6 +85,8 @@ class Robot:
                 self.camera.camera_servos.test_servo_control()
             elif self.mode == Mode.TRACK_LINE_AND_TEST_CAMERA_SERVO_CONTROL.name:
                 self.track_line_and_test_camera_servo_control()
+            elif self.mode == Mode.TEST_FPS.name:
+                self.camera.test_fps()
             
         except Exception as error:
             print(error)
