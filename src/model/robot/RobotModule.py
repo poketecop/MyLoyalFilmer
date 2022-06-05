@@ -39,10 +39,12 @@ class Robot:
     threading = None
     mode = None
 
-    tracking_finished = False
     instructions = None
+    reverse = None
 
-    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False, final_delay = FINAL_DELAY, instructions = DEFAULT_INSTRUCTIONS):
+    tracking_finished = False
+
+    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False, final_delay = FINAL_DELAY, instructions = DEFAULT_INSTRUCTIONS, reverse = False):
         if parameter_list:
             if 'mode' in parameter_list:
                 mode = parameter_list['mode']
@@ -64,6 +66,9 @@ class Robot:
             
             if 'instructions' in parameter_list:
                 instructions = parameter_list['instructions']
+            
+            if 'reverse' in parameter_list:
+                reverse = parameter_list['reverse'].lower() == 'yes'
 
         self.init_pin_numbering_mode()
 
@@ -78,11 +83,15 @@ class Robot:
         self.debug = debug
         self.final_delay = int(final_delay)
         self.instructions = instructions
+        self.reverse = reverse
         
     def play(self):
         try:
             if self.mode == Mode.TRACK_LINE.name:
-                self.track_line()
+                if self.reverse:
+                    self.reverse_track_line()
+                else:
+                    self.track_line()
             elif self.mode == Mode.FILM.name:
                 self.camera.film()
             elif self.mode == Mode.COLOR_TRACK.name:
@@ -119,7 +128,10 @@ class Robot:
         thread1.setDaemon(True)
         thread1.start()
 
-        self.track_line()
+        if self.reverse:
+            self.reverse_track_line()
+        else:
+            self.track_line()
 
         if self.final_delay:
             time.sleep(self.final_delay)
@@ -134,7 +146,10 @@ class Robot:
         thread1.setDaemon(True)
         thread1.start()
 
-        self.track_line()
+        if self.reverse:
+            self.reverse_track_line()
+        else:
+            self.track_line()
 
         while thread1.is_alive():
             time.sleep(2)
@@ -215,6 +230,101 @@ class Robot:
             elif self.tracking_module.both_middle_sensors_over_black_line():
                 if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                     self.motors.run()
+            else:
+                # When the every sensor is NOT over the black line, the car keeps the previous running state.
+                if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
+                    self.tracking_module.consecutive_tracking_option_times += 1
+                   
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
+                        # print consecutive_tracking_option_times
+                        print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
+                        # print track_lost_consecutive_times
+                        print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
+
+                        print('\nTrack lost')
+                        break
+                else:
+                    self.tracking_module.consecutive_tracking_option_times = 0
+                    self.tracking_module.current_tracking_option = LineTrackerModule.LineTrackingOptions.TRACK_LOST
+        
+        self.motors.soft_stop()
+
+    def reverse_track_line(self):
+        # False means that sensor is over the black line
+        # If the the sensor is over the black line, 
+        # light is absorved by the black line and it doesn't return to sensor (False)
+        # If the sensor is not over the black line, 
+        # light is returned to the sensor (True)
+
+        # delay 2s	
+        time.sleep(self.initial_delay)
+
+        timeout = self.process_timeout   # [seconds]
+
+        timeout_start = time.time()
+
+        lap = 0
+        mark_lap = False
+
+        while time.time() < timeout_start + timeout:
+            self.tracking_module.set_sensors_input_value()
+
+            self.motors.reverse_run_with_lower_duty_cycle()
+
+            if not self.tracking_module.every_sensor_over_black():
+                break
+
+        while time.time() < timeout_start + timeout:
+            
+            self.tracking_module.set_sensors_input_value()
+            
+            # 4 tracking pins level status
+            # 0 0 0 0
+            if self.tracking_module.every_sensor_over_black():
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                    mark_lap = True
+                    
+                    if lap >= self.tracking_laps:
+                        break
+            elif mark_lap:
+                mark_lap = False
+                lap = lap + 1
+            
+            # Original conditions
+            
+            # Handle right acute angle and right right angle
+            elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                    # Turn right in place,speed is 100,delay 80ms
+                    self.motors.reverse_sharp_right()
+    
+            # Handle left acute angle and left right angle 
+            elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                    # Turn right in place,speed is 100,delay 80ms  
+                    self.motors.reverse_sharp_left()
+    
+            # Left_sensor1 detected black line
+            elif self.tracking_module.left_sensor_1_detected_black_line():
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                    self.motors.reverse_spin_left()
+        
+            # Right_sensor2 detected black line
+            elif self.tracking_module.right_sensor2_detected_black_line():
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                    self.motors.reverse_spin_right()
+    
+            elif self.tracking_module.middle_right_sensor_misses_black_line():
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                    self.motors.reverse_left()
+    
+            elif self.tracking_module.middle_left_sensor_misses_black_line():
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                    self.motors.reverse_right()
+
+            elif self.tracking_module.both_middle_sensors_over_black_line():
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                    self.motors.reverse_run()
             else:
                 # When the every sensor is NOT over the black line, the car keeps the previous running state.
                 if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
@@ -462,6 +572,51 @@ class Robot:
                     self.motors.sharp_right()
                 if instrucion_time:
                     time.sleep(instrucion_time)
+            # Reverse
+            elif action.upper() == MotorsModule.Action.REVERSE_RUN.name:
+                if duty_cycle:
+                    self.motors.reverse_run_with_duty_cycle(duty_cycle, duty_cycle)
+                else:
+                    self.motors.reverse_run()
+                time.sleep(instrucion_time)
+            elif action.upper() == MotorsModule.Action.REVERSE_LEFT.name:
+                if duty_cycle:
+                    self.motors.reverse_left_with_duty_cycle(duty_cycle)
+                else:
+                    self.motors.reverse_left()
+                time.sleep(instrucion_time)
+            elif action.upper() == MotorsModule.Action.REVERSE_RIGHT.name:
+                if duty_cycle:
+                    self.motors.reverse_right_with_duty_cycle(duty_cycle)
+                else:
+                    self.motors.reverse_right()
+                time.sleep(instrucion_time)
+            elif action.upper() == MotorsModule.Action.REVERSE_SPIN_LEFT.name:
+                if duty_cycle:
+                    self.motors.reverse_spin_left_with_duty_cycle(duty_cycle)
+                else:
+                    self.motors.reverse_spin_left()
+                time.sleep(instrucion_time)
+            elif action.upper() == MotorsModule.Action.REVERSE_SPIN_RIGHT.name:
+                if duty_cycle:
+                    self.motors.reverse_spin_right_with_duty_cycle(duty_cycle)
+                else:
+                    self.motors.reverse_spin_right()
+                time.sleep(instrucion_time)
+            elif action.upper() == MotorsModule.Action.REVERSE_SHARP_LEFT.name:
+                if duty_cycle:
+                    self.motors.reverse_sharp_left_with_duty_cycle(duty_cycle)
+                else:
+                    self.motors.reverse_sharp_left()
+                time.sleep(instrucion_time)
+            elif action.upper() == MotorsModule.Action.REVERSE_SHARP_RIGHT.name:
+                if duty_cycle:
+                    self.motors.reverse_sharp_right_with_duty_cycle(duty_cycle)
+                else:
+                    self.motors.reverse_sharp_right()
+                time.sleep(instrucion_time)
+            else:
+                print('\nAction not recognized.')
 
         self.motors.soft_stop()
                 

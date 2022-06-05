@@ -21,7 +21,6 @@ INWARD_MOTOR_LEAN_DUTY_CYCLE_PERCENTAGE = 10
 # Declare Enum named Action whose names are the names of every methods (words preceded by "def ") in the following Motors class.
 class Action(Enum):
     RUN = 2
-    BACK = 4
     LEFT = 6
     RIGHT = 8
     STOP = 9
@@ -29,7 +28,16 @@ class Action(Enum):
     SPIN_RIGHT = 13
     SHARP_LEFT = 15
     SHARP_RIGHT = 17
-    
+    # Reverse
+    REVERSE_RUN = 19
+    REVERSE_LEFT = 21
+    REVERSE_RIGHT = 23
+    REVERSE_STOP = 25
+    REVERSE_SPIN_LEFT = 27
+    REVERSE_SPIN_RIGHT = 29
+    REVERSE_SHARP_LEFT = 31
+    REVERSE_SHARP_RIGHT = 33
+
 class Motors:
     
     pwm_ENA = None
@@ -71,13 +79,18 @@ class Motors:
         self.pwm_ENA.ChangeDutyCycle(left_duty_cycle)
         self.pwm_ENB.ChangeDutyCycle(right_duty_cycle)
 
-    def run_with_lower_duty_cycle(self):
+    def get_lower_duty_cycle(self):
         if DEFAULT_DESIRED_DUTY_CYCLE < self.desired_left_duty_cycle:
             left_duty_cycle = DEFAULT_DESIRED_DUTY_CYCLE
             right_duty_cycle = DEFAULT_DESIRED_DUTY_CYCLE
         else:
             left_duty_cycle = self.desired_left_duty_cycle
             right_duty_cycle = self.desired_right_duty_cycle
+
+        return left_duty_cycle, right_duty_cycle
+
+    def run_with_lower_duty_cycle(self):
+        left_duty_cycle, right_duty_cycle = self.get_lower_duty_cycle()
 
         self.run_with_duty_cycle(left_duty_cycle = left_duty_cycle, 
             right_duty_cycle = right_duty_cycle)
@@ -175,7 +188,12 @@ class Motors:
         self.stop()
 
     # Do reverse methods here.
-    #back
+    def reverse_run_with_lower_duty_cycle(self):
+        left_duty_cycle, right_duty_cycle = self.get_lower_duty_cycle()
+
+        self.reverse_run_with_duty_cycle(left_duty_cycle = left_duty_cycle, 
+            right_duty_cycle = right_duty_cycle)
+
     def reverse_run_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
         GPIO.output(IN1, GPIO.LOW)
         GPIO.output(IN2, GPIO.HIGH)
