@@ -34,6 +34,7 @@ class Robot:
     tracking_module = None
     process_timeout = None
     initial_delay = None
+    final_delay = None
     tracking_laps = None
     threading = None
     mode = None
@@ -62,7 +63,7 @@ class Robot:
                 final_delay = parameter_list['final_delay']
             
             if 'instructions' in parameter_list:
-                self.instructions = parameter_list['instructions']
+                instructions = parameter_list['instructions']
 
         self.init_pin_numbering_mode()
 
@@ -95,7 +96,7 @@ class Robot:
             elif self.mode == Mode.TEST_FPS.name:
                 self.camera.test_fps()
             elif self.mode == Mode.RUN_WITH_INSTRUCTIONS.name:
-                self.run_with_instructions()
+                self.run_with_instructions(self.instructions)
             elif self.mode == Mode.RUN_WITH_INSTRUCTIONS_AND_COLOR_TRACK.name:
                 self.run_with_instructions_and_color_track()
             
@@ -380,6 +381,16 @@ class Robot:
 
         self.run_with_instructions(self.instructions)
 
+        if self.final_delay:
+            time.sleep(self.final_delay)
+
+        self.camera.stop = True
+
+        while thread1.is_alive():
+            time.sleep(1)
+
+        return 0
+
     def run_with_instructions(self, instructions):
         '''With an input string as parameter containing instructions with action, time and desired duty cycle (this is optional),
         use Motors Action enum to call related Motors class methods (methods with the same names as enum names) and wait the time set in the instuction.
@@ -393,62 +404,64 @@ class Robot:
             action = instruction_list[0]
 
             if len(instruction_list) > 1:
-                time = int(instruction_list[1])
+                instrucion_time = int(instruction_list[1])
             else:
-                time = None
+                instrucion_time = None
 
             if len(instruction_list) > 2:
                 duty_cycle = int(instruction_list[2])
             else:
                 duty_cycle = None
 
-            print('\nAction: ' + action + ' time: ' + str(time) + ' duty_cycle: ' + str(duty_cycle))
+            print('\nAction: ' + action + ' time: ' + str(instrucion_time) + ' duty_cycle: ' + str(duty_cycle))
 
             if action.upper() == MotorsModule.Action.RUN.name:
                 if duty_cycle:
                     self.motors.run_with_duty_cycle(duty_cycle, duty_cycle)
                 else:
                     self.motors.run()
-                time.sleep(time)
+                time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.STOP.name:
                 self.motors.soft_stop()
-                time.sleep(time)
+                time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.LEFT.name:
                 if duty_cycle:
                     self.motors.left_with_duty_cycle(duty_cycle)
                 else:
                     self.motors.left()
-                time.sleep(time)
+                time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.RIGHT.name:
                 if duty_cycle:
                     self.motors.right_with_duty_cycle(duty_cycle)
                 else:
                     self.motors.right()
-                time.sleep(time)
+                time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.SPIN_LEFT.name:
                 if duty_cycle:
                     self.motors.spin_left_with_duty_cycle(duty_cycle)
                 else:
                     self.motors.spin_left()
-                time.sleep(time)
+                time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.SPIN_RIGHT.name:
                 if duty_cycle:
                     self.motors.spin_right_with_duty_cycle(duty_cycle)
                 else:
                     self.motors.spin_right()
-                time.sleep(time)
+                time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.SHARP_LEFT.name:
                 if duty_cycle:
                     self.motors.sharp_left_with_duty_cycle(duty_cycle)
                 else:
                     self.motors.sharp_left()
-                time.sleep(time)
+                if instrucion_time:
+                    time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.SHARP_RIGHT.name:
                 if duty_cycle:
                     self.motors.sharp_right_with_duty_cycle(duty_cycle)
                 else:
                     self.motors.sharp_right()
-                time.sleep(time)
+                if instrucion_time:
+                    time.sleep(instrucion_time)
 
         self.motors.soft_stop()
                 
