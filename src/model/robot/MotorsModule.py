@@ -20,23 +20,16 @@ INWARD_MOTOR_LEAN_DUTY_CYCLE_PERCENTAGE = 10
 
 # Declare Enum named Action whose names are the names of every methods (words preceded by "def ") in the following Motors class.
 class Action(Enum):
-    RUN_WITH_DUTY_CYCLE = 1
     RUN = 2
-    BACK_WITH_DUTY_CYCLE = 3
     BACK = 4
-    LEFT_WITH_DUTY_CYCLE = 5
     LEFT = 6
-    RIGHT_WITH_DUTY_CYCLE = 7
     RIGHT = 8
     STOP = 9
-    SPIN_LEFT_WITH_DUTY_CYCLE = 10
     SPIN_LEFT = 11
-    SPIN_RIGHT_WITH_DUTY_CYCLE = 12
     SPIN_RIGHT = 13
-    SHARP_LEFT_WITH_DUTY_CYCLE = 14
     SHARP_LEFT = 15
-    SHARP_RIGHT_WITH_DUTY_CYCLE = 16
     SHARP_RIGHT = 17
+    
 class Motors:
     
     pwm_ENA = None
