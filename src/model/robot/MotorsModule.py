@@ -86,19 +86,6 @@ class Motors:
         self.run_with_duty_cycle(left_duty_cycle = self.desired_left_duty_cycle, 
             right_duty_cycle = self.desired_right_duty_cycle)
 
-    #back
-    def back_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
-        GPIO.output(IN1, GPIO.LOW)
-        GPIO.output(IN2, GPIO.HIGH)
-        GPIO.output(IN3, GPIO.LOW)
-        GPIO.output(IN4, GPIO.HIGH)
-        self.pwm_ENA.ChangeDutyCycle(left_duty_cycle)
-        self.pwm_ENB.ChangeDutyCycle(right_duty_cycle)
-    
-    def back(self):
-        self.back_with_duty_cycle(left_duty_cycle = self.desired_left_duty_cycle, 
-            right_duty_cycle = self.desired_right_duty_cycle)
-        
     #turn left 
     def left_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
         GPIO.output(IN1, GPIO.LOW)
@@ -186,3 +173,89 @@ class Motors:
         self.brake()
         time.sleep(0.08)
         self.stop()
+
+    # Do reverse methods here.
+    #back
+    def reverse_run_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
+        GPIO.output(IN1, GPIO.LOW)
+        GPIO.output(IN2, GPIO.HIGH)
+        GPIO.output(IN3, GPIO.LOW)
+        GPIO.output(IN4, GPIO.HIGH)
+        self.pwm_ENB.ChangeDutyCycle(left_duty_cycle)
+        self.pwm_ENA.ChangeDutyCycle(right_duty_cycle)
+    
+    def reverse_run(self):
+        self.reverse_run_with_duty_cycle(left_duty_cycle = self.desired_left_duty_cycle, 
+            right_duty_cycle = self.desired_right_duty_cycle)
+
+    def reverse_left_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
+        GPIO.output(IN1, GPIO.LOW)
+        GPIO.output(IN2, GPIO.HIGH)
+        GPIO.output(IN3, GPIO.LOW)
+        GPIO.output(IN4, GPIO.LOW)
+        self.pwm_ENB.ChangeDutyCycle(left_duty_cycle)
+        self.pwm_ENA.ChangeDutyCycle(right_duty_cycle)
+
+    def reverse_left(self):
+        self.reverse_left_with_duty_cycle(left_duty_cycle = percentage(INWARD_MOTOR_LEAN_DUTY_CYCLE_PERCENTAGE, self.desired_left_duty_cycle), 
+            right_duty_cycle = percentage(OUTWARD_MOTOR_LEAN_DUTY_CYCLE_PERCENTAGE, self.desired_right_duty_cycle)
+        )
+    
+    def reverse_right_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
+        GPIO.output(IN1, GPIO.LOW)
+        GPIO.output(IN2, GPIO.LOW)
+        GPIO.output(IN3, GPIO.HIGH)
+        GPIO.output(IN4, GPIO.HIGH)
+        self.pwm_ENB.ChangeDutyCycle(left_duty_cycle)
+        self.pwm_ENA.ChangeDutyCycle(right_duty_cycle)
+    
+    def reverse_right(self):
+        self.reverse_right_with_duty_cycle(left_duty_cycle = percentage(OUTWARD_MOTOR_LEAN_DUTY_CYCLE_PERCENTAGE, self.desired_left_duty_cycle), 
+            right_duty_cycle = percentage(INWARD_MOTOR_LEAN_DUTY_CYCLE_PERCENTAGE, self.desired_right_duty_cycle)
+        )
+    
+    def reverse_spin_right_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
+        GPIO.output(IN1, GPIO.HIGH)
+        GPIO.output(IN2, GPIO.LOW)
+        GPIO.output(IN3, GPIO.LOW)
+        GPIO.output(IN4, GPIO.HIGH)
+        self.pwm_ENB.ChangeDutyCycle(left_duty_cycle)
+        self.pwm_ENA.ChangeDutyCycle(right_duty_cycle)
+    
+    def reverse_spin_right(self):
+        self.reverse_spin_right_with_duty_cycle(left_duty_cycle = percentage(SPIN_DUTY_CYCLE_PERCENTAGE, self.desired_left_duty_cycle), 
+            right_duty_cycle = percentage(SPIN_DUTY_CYCLE_PERCENTAGE, self.desired_right_duty_cycle)
+        )
+
+    def reverse_spin_left_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
+        GPIO.output(IN1, GPIO.LOW)
+        GPIO.output(IN2, GPIO.HIGH)
+        GPIO.output(IN3, GPIO.LOW)
+        GPIO.output(IN4, GPIO.HIGH)
+        self.pwm_ENB.ChangeDutyCycle(left_duty_cycle)
+        self.pwm_ENA.ChangeDutyCycle(right_duty_cycle)
+
+    def reverse_spin_left(self):
+        self.reverse_spin_left_with_duty_cycle(left_duty_cycle = percentage(SPIN_DUTY_CYCLE_PERCENTAGE, self.desired_left_duty_cycle), 
+            right_duty_cycle = percentage(SPIN_DUTY_CYCLE_PERCENTAGE, self.desired_right_duty_cycle)
+        )
+
+    def reverse_sharp_right_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
+        self.reverse_spin_right_with_duty_cycle(left_duty_cycle, right_duty_cycle), 
+        time.sleep(0.08)
+    
+    def reverse_sharp_right(self):
+        self.reverse_spin_right()
+        time.sleep(0.08)
+
+    def reverse_sharp_left_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
+        self.reverse_spin_left_with_duty_cycle(left_duty_cycle, right_duty_cycle), 
+        time.sleep(0.08)
+
+    def reverse_sharp_left(self):
+        self.reverse_spin_left()
+        time.sleep(0.08)
+
+        
+    
+        
