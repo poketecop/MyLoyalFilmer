@@ -1,4 +1,5 @@
 #-*- coding:UTF-8 -*-
+from enum import Enum
 import RPi.GPIO as GPIO
 import time
 
@@ -17,6 +18,25 @@ SPIN_DUTY_CYCLE_PERCENTAGE = 70
 OUTWARD_MOTOR_LEAN_DUTY_CYCLE_PERCENTAGE = 80
 INWARD_MOTOR_LEAN_DUTY_CYCLE_PERCENTAGE = 10
 
+# Declare Enum named Action whose names are the names of every methods (words preceded by "def ") in the following Motors class.
+class Action(Enum):
+    RUN_WITH_DUTY_CYCLE = 1
+    RUN = 2
+    BACK_WITH_DUTY_CYCLE = 3
+    BACK = 4
+    LEFT_WITH_DUTY_CYCLE = 5
+    LEFT = 6
+    RIGHT_WITH_DUTY_CYCLE = 7
+    RIGHT = 8
+    STOP = 9
+    SPIN_LEFT_WITH_DUTY_CYCLE = 10
+    SPIN_LEFT = 11
+    SPIN_RIGHT_WITH_DUTY_CYCLE = 12
+    SPIN_RIGHT = 13
+    SHARP_LEFT_WITH_DUTY_CYCLE = 14
+    SHARP_LEFT = 15
+    SHARP_RIGHT_WITH_DUTY_CYCLE = 16
+    SHARP_RIGHT = 17
 class Motors:
     
     pwm_ENA = None
@@ -128,6 +148,10 @@ class Motors:
             right_duty_cycle = percentage(SPIN_DUTY_CYCLE_PERCENTAGE, self.desired_right_duty_cycle)
         )
     
+    def sharp_left_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
+        self.spin_left_with_duty_cycle(left_duty_cycle, right_duty_cycle), 
+        time.sleep(0.08)
+    
     def sharp_left(self):
         self.spin_left()
         time.sleep(0.08)
@@ -146,6 +170,10 @@ class Motors:
             right_duty_cycle = percentage(SPIN_DUTY_CYCLE_PERCENTAGE, self.desired_right_duty_cycle)
         )
 
+    def sharp_right_with_duty_cycle(self, left_duty_cycle, right_duty_cycle):
+        self.spin_right_with_duty_cycle(left_duty_cycle, right_duty_cycle), 
+        time.sleep(0.08)
+        
     def sharp_right(self):
         self.spin_right()
         time.sleep(0.08)
