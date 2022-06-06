@@ -2,6 +2,7 @@
 
 from enum import Enum
 from collections import deque
+import traceback
 import cv2
 import time
 import numpy as np
@@ -326,18 +327,25 @@ class Camera:
         print("The video was successfully saved")
     
     def save_film(self):
-        while True:
-            if self.saving_frame_queue:
-                self.result.write(self.saving_frame_queue.popleft())
-            else:
-                if self.video_capture_finished:
-                    break
+        exception = None
 
-            if not self.video_capture_finished and self.saving_frame_interval:
-                time.sleep(self.saving_frame_interval)
+        try:
+            while True:
+                if self.saving_frame_queue:
+                    self.result.write(self.saving_frame_queue.popleft())
+                else:
+                    if self.video_capture_finished:
+                        break
 
-        self.finish_film_saving()
-        print('\nSave film finished.')
+                if not self.video_capture_finished and self.saving_frame_interval:
+                    time.sleep(self.saving_frame_interval)
+        except Exception as e:
+            exception = e
+            print('\nError in save_film: ' + str(e))
+            print('\n' + traceback.format_exc())
+        finally:
+            self.finish_film_saving()
+            print('\nSave film finished.')
 
     def film(self):
         t_start = time.time()

@@ -27,6 +27,7 @@ class Mode(Enum):
     TEST_FPS = 8
     RUN_WITH_INSTRUCTIONS = 9
     RUN_WITH_INSTRUCTIONS_AND_COLOR_TRACK = 10
+    INFINITE_TRACK_LINE_AND_COLOR_TRACK = 11
     
 class Robot:
 
@@ -114,6 +115,8 @@ class Robot:
                 self.run_with_instructions(self.instructions)
             elif self.mode == Mode.RUN_WITH_INSTRUCTIONS_AND_COLOR_TRACK.name:
                 self.run_with_instructions_and_color_track()
+            elif self.mode == Mode.INFINITE_TRACK_LINE_AND_COLOR_TRACK.name:
+                self.infinite_track_line_and_color_track()
             
         except Exception as error:
             print(error)
@@ -129,6 +132,12 @@ class Robot:
         # Ignore warning information
         GPIO.setwarnings(False)
 
+    def infinite_track_line_and_color_track(self):
+        t_start = time.time()
+
+        while time.time() < t_start + self.process_timeout:
+            self.track_line_and_color_track()
+
     def track_line_and_color_track(self):
         thread1 = threading.Thread(target = self.save_film_and_color_track)
         thread1.setDaemon(True)
@@ -142,6 +151,7 @@ class Robot:
         if self.final_delay:
             time.sleep(self.final_delay)
             
+        # save_film_and_color_track thread communication.
         self.camera.stop = True
 
         while thread1.is_alive():
@@ -168,6 +178,8 @@ class Robot:
         # light is returned to the sensor (True)
 
         # delay 2s	
+        exception = None
+
         time.sleep(self.initial_delay)
 
         timeout = self.process_timeout   # [seconds]
@@ -178,92 +190,100 @@ class Robot:
         mark_lap = False
         lap_delayed = False
 
-        while time.time() < timeout_start + timeout:
-            self.tracking_module.set_sensors_input_value()
+        try:
+            while time.time() < timeout_start + timeout:
+                self.tracking_module.set_sensors_input_value()
 
-            self.motors.run_with_lower_duty_cycle()
+                self.motors.run_with_lower_duty_cycle()
 
-            if not self.tracking_module.every_sensor_over_black():
-                break
+                if not self.tracking_module.every_sensor_over_black():
+                    break
 
-        # consecutive_tracking_option_times is managed in LineTrackerModule.py
-        while time.time() < timeout_start + timeout:
-            
-            self.tracking_module.set_sensors_input_value()
-            
-            # 4 tracking pins level status
-            # 0 0 0 0
-            if self.tracking_module.every_sensor_over_black():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    mark_lap = True
-                    
-                    if lap >= self.tracking_laps:
-                        break
+            # consecutive_tracking_option_times is managed in LineTrackerModule.py
+            while time.time() < timeout_start + timeout:
+                
+                self.tracking_module.set_sensors_input_value()
+                
+                # 4 tracking pins level status
+                # 0 0 0 0
+                if self.tracking_module.every_sensor_over_black():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        mark_lap = True
+                        
+                        if lap >= self.tracking_laps:
+                            break
 
-                    if lap > 0 and not lap_delayed:
-                        if self.lap_delay:
-                            self.motors.soft_stop()
-                            time.sleep(self.lap_delay)
-                            lap_delayed = True
-                            self.motors.reverse_run_with_lower_duty_cycle()
-            elif mark_lap:
-                mark_lap = False
-                lap = lap + 1
-                lap_delayed = False
-            
-            # Original conditions
-            
-            # Handle right acute angle and right right angle
-            elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    # Turn right in place,speed is 100,delay 80ms
-                    self.motors.sharp_right()
-    
-            # Handle left acute angle and left right angle 
-            elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    # Turn right in place,speed is 100,delay 80ms  
-                    self.motors.sharp_left()
-    
-            # Left_sensor1 detected black line
-            elif self.tracking_module.left_sensor_1_detected_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    self.motors.spin_left()
+                        if lap > 0 and not lap_delayed:
+                            if self.lap_delay:
+                                self.motors.soft_stop()
+                                time.sleep(self.lap_delay)
+                                lap_delayed = True
+                                self.motors.reverse_run_with_lower_duty_cycle()
+                elif mark_lap:
+                    mark_lap = False
+                    lap = lap + 1
+                    lap_delayed = False
+                
+                # Original conditions
+                
+                # Handle right acute angle and right right angle
+                elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        # Turn right in place,speed is 100,delay 80ms
+                        self.motors.sharp_right()
         
-            # Right_sensor2 detected black line
-            elif self.tracking_module.right_sensor2_detected_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    self.motors.spin_right()
-    
-            elif self.tracking_module.middle_right_sensor_misses_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    self.motors.left()
-    
-            elif self.tracking_module.middle_left_sensor_misses_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    self.motors.right()
+                # Handle left acute angle and left right angle 
+                elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        # Turn right in place,speed is 100,delay 80ms  
+                        self.motors.sharp_left()
+        
+                # Left_sensor1 detected black line
+                elif self.tracking_module.left_sensor_1_detected_black_line():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        self.motors.spin_left()
+            
+                # Right_sensor2 detected black line
+                elif self.tracking_module.right_sensor2_detected_black_line():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        self.motors.spin_right()
+        
+                elif self.tracking_module.middle_right_sensor_misses_black_line():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        self.motors.left()
+        
+                elif self.tracking_module.middle_left_sensor_misses_black_line():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        self.motors.right()
 
-            elif self.tracking_module.both_middle_sensors_over_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    self.motors.run()
-            else:
-                # When the every sensor is NOT over the black line, the car keeps the previous running state.
-                if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
-                    self.tracking_module.consecutive_tracking_option_times += 1
-                   
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
-                        # print consecutive_tracking_option_times
-                        print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
-                        # print track_lost_consecutive_times
-                        print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
-
-                        print('\nTrack lost')
-                        break
+                elif self.tracking_module.both_middle_sensors_over_black_line():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        self.motors.run()
                 else:
-                    self.tracking_module.consecutive_tracking_option_times = 0
-                    self.tracking_module.current_tracking_option = LineTrackerModule.LineTrackingOptions.TRACK_LOST
-        
-        self.motors.soft_stop()
+                    # When the every sensor is NOT over the black line, the car keeps the previous running state.
+                    if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
+                        self.tracking_module.consecutive_tracking_option_times += 1
+                    
+                        if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
+                            # print consecutive_tracking_option_times
+                            print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
+                            # print track_lost_consecutive_times
+                            print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
+
+                            print('\nTrack lost')
+                            break
+                    else:
+                        self.tracking_module.consecutive_tracking_option_times = 0
+                        self.tracking_module.current_tracking_option = LineTrackerModule.LineTrackingOptions.TRACK_LOST
+        except Exception as e:
+            exception = e
+            print('\nError in track_line: ' + str(e))
+            print('\n' + traceback.format_exc())
+        finally:
+            self.motors.soft_stop()
+            # Propagate the exception.
+            if exception:
+                raise exception
 
     def reverse_track_line(self):
         # False means that sensor is over the black line
@@ -283,92 +303,101 @@ class Robot:
         mark_lap = False
         lap_delayed = False
 
-        while time.time() < timeout_start + timeout:
-            self.tracking_module.set_sensors_input_value()
+        try:
+            while time.time() < timeout_start + timeout:
+                self.tracking_module.set_sensors_input_value()
 
-            self.motors.reverse_run_with_lower_duty_cycle()
+                self.motors.reverse_run_with_lower_duty_cycle()
 
-            if not self.tracking_module.every_sensor_over_black():
-                break
+                if not self.tracking_module.every_sensor_over_black():
+                    break
 
-        # consecutive_tracking_option_times is managed in LineTrackerModule.py
-        while time.time() < timeout_start + timeout:
-            
-            self.tracking_module.set_sensors_input_value()
-            
-            # 4 tracking pins level status
-            # 0 0 0 0
-            if self.tracking_module.every_sensor_over_black():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    mark_lap = True
-                    
-                    if lap >= self.tracking_laps:
-                        break
+            # consecutive_tracking_option_times is managed in LineTrackerModule.py
+            while time.time() < timeout_start + timeout:
+                
+                self.tracking_module.set_sensors_input_value()
+                
+                # 4 tracking pins level status
+                # 0 0 0 0
+                if self.tracking_module.every_sensor_over_black():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        mark_lap = True
+                        
+                        if lap >= self.tracking_laps:
+                            break
 
-                    if lap > 0 and not lap_delayed:
-                        if self.lap_delay:
-                            self.motors.soft_stop()
-                            time.sleep(self.lap_delay)
-                            lap_delayed = True
-                            self.motors.reverse_run_with_lower_duty_cycle()
-            elif mark_lap:
-                mark_lap = False
-                lap = lap + 1
-                lap_delayed = False
-            
-            # Original conditions
-            
-            # Handle right acute angle and right right angle
-            elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    # Turn right in place,speed is 100,delay 80ms
-                    self.motors.reverse_sharp_right()
-    
-            # Handle left acute angle and left right angle 
-            elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    # Turn right in place,speed is 100,delay 80ms  
-                    self.motors.reverse_sharp_left()
-    
-            # Left_sensor1 detected black line
-            elif self.tracking_module.left_sensor_1_detected_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    self.motors.reverse_spin_left()
+                        if lap > 0 and not lap_delayed:
+                            if self.lap_delay:
+                                self.motors.soft_stop()
+                                time.sleep(self.lap_delay)
+                                lap_delayed = True
+                                self.motors.reverse_run_with_lower_duty_cycle()
+                elif mark_lap:
+                    mark_lap = False
+                    lap = lap + 1
+                    lap_delayed = False
+                
+                # Original conditions
+                
+                # Handle right acute angle and right right angle
+                elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        # Turn right in place,speed is 100,delay 80ms
+                        self.motors.reverse_sharp_right()
         
-            # Right_sensor2 detected black line
-            elif self.tracking_module.right_sensor2_detected_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    self.motors.reverse_spin_right()
-    
-            elif self.tracking_module.middle_right_sensor_misses_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    self.motors.reverse_left()
-    
-            elif self.tracking_module.middle_left_sensor_misses_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    self.motors.reverse_right()
+                # Handle left acute angle and left right angle 
+                elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        # Turn right in place,speed is 100,delay 80ms  
+                        self.motors.reverse_sharp_left()
+        
+                # Left_sensor1 detected black line
+                elif self.tracking_module.left_sensor_1_detected_black_line():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        self.motors.reverse_spin_left()
+            
+                # Right_sensor2 detected black line
+                elif self.tracking_module.right_sensor2_detected_black_line():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        self.motors.reverse_spin_right()
+        
+                elif self.tracking_module.middle_right_sensor_misses_black_line():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        self.motors.reverse_left()
+        
+                elif self.tracking_module.middle_left_sensor_misses_black_line():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        self.motors.reverse_right()
 
-            elif self.tracking_module.both_middle_sensors_over_black_line():
-                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                    self.motors.reverse_run()
-            else:
-                # When the every sensor is NOT over the black line, the car keeps the previous running state.
-                if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
-                    self.tracking_module.consecutive_tracking_option_times += 1
-                   
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
-                        # print consecutive_tracking_option_times
-                        print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
-                        # print track_lost_consecutive_times
-                        print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
-
-                        print('\nTrack lost')
-                        break
+                elif self.tracking_module.both_middle_sensors_over_black_line():
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                        self.motors.reverse_run()
                 else:
-                    self.tracking_module.consecutive_tracking_option_times = 0
-                    self.tracking_module.current_tracking_option = LineTrackerModule.LineTrackingOptions.TRACK_LOST
-        
-        self.motors.soft_stop()
+                    # When the every sensor is NOT over the black line, the car keeps the previous running state.
+                    if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
+                        self.tracking_module.consecutive_tracking_option_times += 1
+                    
+                        if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
+                            # print consecutive_tracking_option_times
+                            print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
+                            # print track_lost_consecutive_times
+                            print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
+
+                            print('\nTrack lost')
+                            break
+                    else:
+                        self.tracking_module.consecutive_tracking_option_times = 0
+                        self.tracking_module.current_tracking_option = LineTrackerModule.LineTrackingOptions.TRACK_LOST
+            
+        except Exception as e:
+            exception = e
+            print('\nError in track_line: ' + str(e))
+            print('\n' + traceback.format_exc())
+        finally:
+            self.motors.soft_stop()
+            # Propagate the exception.
+            if exception:
+                raise exception
 
     def color_track(self):
         t_start = time.time()
@@ -476,25 +505,29 @@ class Robot:
         # Read the first frame and stored as object property.
         t_start = time.time()
         i = 0
-        while not self.camera.stop:
-            ret, frame = self.camera.image.read()
-            self.camera.saving_frame_queue.append(frame)
-            self.camera.processing_frame = frame
-            i += 1
+        try:
+            while not self.camera.stop:
+                ret, frame = self.camera.image.read()
+                self.camera.saving_frame_queue.append(frame)
+                self.camera.processing_frame = frame
+                i += 1
+        except Exception as e:
+            print('\nError in save_film_and_color_track: ' + str(e))
+            print('\n' + traceback.format_exc())
+        finally:
+            self.camera.finish_film_capture()
+            self.camera.video_capture_finished = True
 
-        self.camera.finish_film_capture()
-        self.camera.video_capture_finished = True
+            print('\nReading videoCapture finish.')
+            print("\nFPS: " + str(i / (time.time() - t_start)))
 
-        print('\nReading videoCapture finish.')
-        print("\nFPS: " + str(i / (time.time() - t_start)))
+            while thread1.is_alive():
+                time.sleep(1)
 
-        while thread1.is_alive():
-            time.sleep(1)
+            while thread2.is_alive():
+                time.sleep(1)
 
-        while thread2.is_alive():
-            time.sleep(1)
-
-        return 0
+            return 0
 
     def chech_test_position(self, color_x, color_y, i):
         print('\n¿Are you in the desired' + str(i) + ' test position? Y/N:N')
