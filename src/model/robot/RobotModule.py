@@ -234,7 +234,7 @@ class Robot:
 
                         if lap > 0 and not lap_delayed:
                             if self.lap_delay:
-                                self.motors.soft_stop()
+                                self.motors.soft_final_stop()
                                 time.sleep(self.lap_delay)
                                 lap_delayed = True
                                 self.motors.reverse_run_with_lower_duty_cycle()
@@ -299,7 +299,7 @@ class Robot:
             print('\nError in track_line: ' + str(e))
             print('\n' + traceback.format_exc())
         finally:
-            self.motors.soft_stop()
+            self.motors.soft_final_stop()
             # Propagate the exception.
             if exception:
                 raise exception
@@ -310,7 +310,7 @@ class Robot:
         # light is absorved by the black line and it doesn't return to sensor (False)
         # If the sensor is not over the black line, 
         # light is returned to the sensor (True)
-
+        exception = None
         # delay 2s	
         time.sleep(self.initial_delay)
 
@@ -413,7 +413,7 @@ class Robot:
             print('\nError in track_line: ' + str(e))
             print('\n' + traceback.format_exc())
         finally:
-            self.motors.soft_stop()
+            self.motors.soft_final_stop()
             # Propagate the exception.
             if exception:
                 raise exception
@@ -610,7 +610,7 @@ class Robot:
                     self.motors.run()
                 time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.STOP.name:
-                self.motors.soft_stop()
+                self.motors.soft_final_stop()
                 time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.LEFT.name:
                 if duty_cycle:
@@ -696,7 +696,7 @@ class Robot:
             else:
                 print('\nAction not recognized.')
 
-        self.motors.soft_stop()
+        self.motors.soft_final_stop()
                 
 
         

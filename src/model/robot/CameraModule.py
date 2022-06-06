@@ -58,7 +58,7 @@ X_Y_RESOLUTION_RELATION = X_RESOLUTION / Y_RESOLUTION
 
 # Capturing frames and saving frames are not the same thing.
 CAPTURE_FPS = 30
-SAVING_FPS = 20
+SAVING_FPS = 23
 
 BRIGHTNESS = 10
 CONTRAST = 30

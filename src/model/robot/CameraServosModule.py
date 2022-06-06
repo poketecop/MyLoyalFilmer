@@ -75,16 +75,20 @@ class CameraServos:
     def servo_control(self, x_angle, y_angle):
         '''Control servo angle'''
 
+        print('\nRaw angles: x = ' + str(x_angle) + ' y = ' + str(y_angle))
         # Set angles inside the limits.
-        if x_angle <= 0:
+        if x_angle <= 0 + ANGLE_SAFE_MARGIN_X:
             x_angle = 0 + ANGLE_SAFE_MARGIN_X
-        elif x_angle >= 180:
+        elif x_angle >= 180 - ANGLE_SAFE_MARGIN_X:
             x_angle = 180 - ANGLE_SAFE_MARGIN_X
             
-        if y_angle <= 0:
+        if y_angle <= 0 + ANGLE_SAFE_MARGIN_Y:
             y_angle = 0 + ANGLE_SAFE_MARGIN_Y
-        elif y_angle >= 180:
+        elif y_angle >= 180 - ANGLE_SAFE_MARGIN_Y:
             y_angle = 180 - ANGLE_SAFE_MARGIN_Y
+        
+        print('\nSafe angles: x = ' + str(x_angle) + ' y = ' + str(y_angle))
+        print('\nCurrent angles: x = ' + str(self.current_x_servo_angle) + ' y = ' + str(self.current_y_servo_angle))
 
         # If the angle is not changed, do not do anything.
         if x_angle == self.current_x_servo_angle and y_angle == self.current_y_servo_angle:

@@ -3,7 +3,7 @@ from enum import Enum
 import RPi.GPIO as GPIO
 import time
 
-CONSISTENT_CONSECUTIVE_TIMES = 0
+CONSISTENT_CONSECUTIVE_TIMES = 1
 TRACK_LOST_CONSECUTIVE_TIMES = 100000
 
 class LineTrackingOptions(Enum):

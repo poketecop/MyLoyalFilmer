@@ -178,9 +178,18 @@ class Motors:
         GPIO.output(IN3, GPIO.LOW)
         GPIO.output(IN4, GPIO.LOW)
     
-    def stop(self):
+    def final_stop(self):
         self.pwm_ENA.stop()
         self.pwm_ENB.stop()
+
+    def stop(self):
+        self.pwm_ENA.ChangeDutyCycle(0)
+        self.pwm_ENB.ChangeDutyCycle(0)
+
+    def soft_final_stop(self):
+        self.brake()
+        time.sleep(0.08)
+        self.final_stop()
 
     def soft_stop(self):
         self.brake()
