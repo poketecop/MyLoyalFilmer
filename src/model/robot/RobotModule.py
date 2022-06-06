@@ -4,7 +4,7 @@ from enum import Enum
 import threading
 import RPi.GPIO as GPIO
 import time
-from model.robot import CameraModule
+from model.robot import CameraModule, RGBLighterModule
 from model.robot import MotorsModule
 from model.robot import LineTrackerModule
 import traceback
@@ -14,6 +14,8 @@ DEFAULT_INITIAL_DELAY = 2
 DEFAULT_TRACKING_LAPS = 1
 FINAL_DELAY = 5
 LAP_DELAY = 0
+WAIT_DELAY = 10
+LAST_SECONDS = 4
 DEFAULT_INSTRUCTIONS = "Run,5"
 
 class Mode(Enum):
@@ -34,10 +36,12 @@ class Robot:
     motors = None
     camera = None
     tracking_module = None
+    rgb_lighter = None
     process_timeout = None
     initial_delay = None
     final_delay = None
     lap_delay = None
+    wait_delay = None
     tracking_laps = None
     threading = None
     mode = None
@@ -47,7 +51,7 @@ class Robot:
 
     tracking_finished = False
 
-    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False, final_delay = FINAL_DELAY, instructions = DEFAULT_INSTRUCTIONS, reverse = False, lap_delay = LAP_DELAY):
+    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False, final_delay = FINAL_DELAY, instructions = DEFAULT_INSTRUCTIONS, reverse = False, lap_delay = LAP_DELAY, wait_delay = WAIT_DELAY):
         if parameter_list:
             if 'mode' in parameter_list:
                 mode = parameter_list['mode']
@@ -75,13 +79,17 @@ class Robot:
             
             if 'lap_delay' in parameter_list:
                 lap_delay = parameter_list['lap_delay']
+            
+            if 'wait_delay' in parameter_list:
+                wait_delay = parameter_list['wait_delay']
 
         self.init_pin_numbering_mode()
 
         self.motors = MotorsModule.Motors(parameter_list)
         self.tracking_module = LineTrackerModule.LineTracker(parameter_list)
         self.camera = CameraModule.Camera(parameter_list, process_timeout = process_timeout)
-    
+        self.rgb_lighter = RGBLighterModule.RGBLighter()
+        
         self.process_timeout = int(process_timeout)
         self.initial_delay = float(initial_delay)
         self.tracking_laps = int(tracking_laps)
@@ -89,6 +97,7 @@ class Robot:
         self.debug = debug
         self.final_delay = float(final_delay)
         self.lap_delay = float(lap_delay)
+        self.wait_delay = int(wait_delay)
         self.instructions = instructions
         self.reverse = reverse
         
@@ -137,6 +146,16 @@ class Robot:
 
         while time.time() < t_start + self.process_timeout:
             self.track_line_and_color_track()
+            if not self.wait_delay:
+                continue
+
+            if self.wait_delay < 3:
+                self.rgb_lighter.about_to_start()
+                time.sleep(self.wait_delay)
+            else:
+                time.sleep(self.wait_delay - LAST_SECONDS)
+                self.rgb_lighter.about_to_start()
+                time.sleep(LAST_SECONDS)
 
     def track_line_and_color_track(self):
         thread1 = threading.Thread(target = self.save_film_and_color_track)
