@@ -83,7 +83,9 @@ cd  Yahboom_Project/MyLoyalFilmer/src
 
 python3 main.py -desired_duty_cycle 20 -process_timeout 120 -initial_delay 25 -color_to_track RED -mode COLOR_TRACK -initial_x_servo_angle 2300 -initial_y_servo_angle 1600 -tracking_laps 0
 
-python3 main.py -desired_duty_cycle 20 -process_timeout 60 -initial_delay 25 -color_to_track RED -mode COLOR_TRACK -initial_x_servo_angle 160 -initial_y_servo_angle 80 -tracking_laps 0 -alternative_camera_servos yes -debug yes
+python3 main.py -desired_duty_cycle 20 -process_timeout 30 -initial_delay 25 -color_to_track RED -mode COLOR_TRACK -initial_x_servo_angle 160 -initial_y_servo_angle 80 -tracking_laps 0 -alternative_camera_servos no -debug yes
+
+python3 Yahboom_Project/MyLoyalFilmer/src/main.py -desired_duty_cycle 40 -process_timeout 30 -initial_delay 25 -color_to_track RED -mode INFINITE_TRACK_LINE_AND_COLOR_TRACK -initial_x_servo_angle 160 -initial_y_servo_angle 80 -tracking_laps 0 -alternative_camera_servos no -debug no
 
 
 cd /home/pi

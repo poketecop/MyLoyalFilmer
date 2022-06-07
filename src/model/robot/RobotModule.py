@@ -149,13 +149,7 @@ class Robot:
             if not self.wait_delay:
                 continue
 
-            if self.wait_delay < 3:
-                self.rgb_lighter.about_to_start()
-                time.sleep(self.wait_delay)
-            else:
-                time.sleep(self.wait_delay - LAST_SECONDS)
-                self.rgb_lighter.about_to_start()
-                time.sleep(LAST_SECONDS)
+            time.sleep(self.wait_delay)
 
     def track_line_and_color_track(self):
         thread1 = threading.Thread(target = self.save_film_and_color_track)
@@ -199,7 +193,7 @@ class Robot:
         # delay 2s	
         exception = None
 
-        time.sleep(self.initial_delay)
+        self.wait_and_notify_start()
 
         timeout = self.process_timeout   # [seconds]
 
@@ -304,6 +298,15 @@ class Robot:
             if exception:
                 raise exception
 
+    def wait_and_notify_start(self):
+        if self.initial_delay:
+            if self.initial_delay < 3:
+                self.rgb_lighter.about_to_start()
+            else:
+                time.sleep(self.initial_delay - LAST_SECONDS)
+                self.rgb_lighter.about_to_start()
+                time.sleep(LAST_SECONDS)
+
     def reverse_track_line(self):
         # False means that sensor is over the black line
         # If the the sensor is over the black line, 
@@ -312,7 +315,8 @@ class Robot:
         # light is returned to the sensor (True)
         exception = None
         # delay 2s	
-        time.sleep(self.initial_delay)
+
+        self.wait_and_notify_start()
 
         timeout = self.process_timeout   # [seconds]
 

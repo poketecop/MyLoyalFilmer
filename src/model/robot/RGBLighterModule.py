@@ -59,7 +59,8 @@ class RGBLighter:
             self.light(RGBColor.RED)
             time.sleep(0.3)
             self.light(RGBColor.GREEN)
-            
+            i += 1
+
         self.light_off()
     
     def light_off(self):
@@ -68,31 +69,31 @@ class RGBLighter:
         GPIO.output(LED_B, GPIO.LOW)
 
     def light(self, color):
-        if color.upper == RGBColor.RED.name:
+        if color == RGBColor.RED:
             GPIO.output(LED_R, GPIO.HIGH)
             GPIO.output(LED_G, GPIO.LOW)
             GPIO.output(LED_B, GPIO.LOW)
-        elif color.upper == RGBColor.GREEN.name:
+        elif color == RGBColor.GREEN:
             GPIO.output(LED_R, GPIO.LOW)
             GPIO.output(LED_G, GPIO.HIGH)
             GPIO.output(LED_B, GPIO.LOW)
-        elif color.upper == RGBColor.BLUE.name:
+        elif color == RGBColor.BLUE:
             GPIO.output(LED_R, GPIO.LOW)
             GPIO.output(LED_G, GPIO.LOW)
             GPIO.output(LED_B, GPIO.HIGH)
-        elif color.upper == RGBColor.YELLOW.name:
+        elif color == RGBColor.YELLOW:
             GPIO.output(LED_R, GPIO.HIGH)
             GPIO.output(LED_G, GPIO.HIGH)
             GPIO.output(LED_B, GPIO.LOW)
-        elif color.upper == RGBColor.PURPLE.name:
+        elif color == RGBColor.PURPLE:
             GPIO.output(LED_R, GPIO.HIGH)
             GPIO.output(LED_G, GPIO.LOW)
             GPIO.output(LED_B, GPIO.HIGH)
-        elif color.upper == RGBColor.CYAN.name:
+        elif color == RGBColor.CYAN:
             GPIO.output(LED_R, GPIO.LOW)
             GPIO.output(LED_G, GPIO.HIGH)
             GPIO.output(LED_B, GPIO.HIGH)
-        elif color.upper == RGBColor.WHITE.name:
+        elif color == RGBColor.WHITE:
             GPIO.output(LED_R, GPIO.HIGH)
             GPIO.output(LED_G, GPIO.HIGH)
             GPIO.output(LED_B, GPIO.HIGH)
