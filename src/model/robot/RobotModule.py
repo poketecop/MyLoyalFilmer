@@ -30,6 +30,7 @@ class Mode(Enum):
     RUN_WITH_INSTRUCTIONS = 9
     RUN_WITH_INSTRUCTIONS_AND_COLOR_TRACK = 10
     INFINITE_TRACK_LINE_AND_COLOR_TRACK = 11
+    TEST_TWO_CONSECUTIVE_FILMINGS = 12
     
 class Robot:
 
@@ -129,6 +130,8 @@ class Robot:
                 self.run_with_instructions_and_color_track()
             elif self.mode == Mode.INFINITE_TRACK_LINE_AND_COLOR_TRACK.name:
                 self.infinite_track_line_and_color_track()
+            elif self.mode == Mode.TEST_TWO_CONSECUTIVE_FILMINGS.name:
+                self.camera.test_two_consecutive_filmings()
             
         except Exception as error:
             print(error)

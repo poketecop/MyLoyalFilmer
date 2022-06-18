@@ -451,6 +451,12 @@ class Camera:
         
         self.finish_film_capture()
 
+    def test_two_consecutive_filmings(self):
+        self.process_timeout = 6
+        self.film()
+        time.sleep(1)
+        self.film()
+
 
 
     
