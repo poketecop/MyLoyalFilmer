@@ -48,6 +48,7 @@ class Robot:
 
     instructions = None
     reverse = None
+    infinite = None
 
     tracking_finished = False
 
@@ -100,6 +101,8 @@ class Robot:
         self.wait_delay = int(wait_delay)
         self.instructions = instructions
         self.reverse = reverse
+
+        self.infinite = False
         
     def play(self):
         try:
@@ -142,6 +145,8 @@ class Robot:
         GPIO.setwarnings(False)
 
     def infinite_track_line_and_color_track(self):
+        self.infinite = True
+
         t_start = time.time()
 
         while time.time() < t_start + self.process_timeout:
@@ -182,7 +187,7 @@ class Robot:
 
         while thread1.is_alive():
             time.sleep(2)
-
+    
     def track_line(self):
         # False means that sensor is over the black line
         # If the the sensor is over the black line, 
@@ -220,7 +225,7 @@ class Robot:
                 # 4 tracking pins level status
                 # 0 0 0 0
                 if self.tracking_module.every_sensor_over_black():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_stop_consecutive_times:
                         mark_lap = True
                         
                         if lap >= self.tracking_laps:
@@ -228,10 +233,10 @@ class Robot:
 
                         if lap > 0 and not lap_delayed:
                             if self.lap_delay:
-                                self.motors.soft_final_stop()
+                                self.motors.soft_stop()
                                 time.sleep(self.lap_delay)
                                 lap_delayed = True
-                                self.motors.reverse_run_with_lower_duty_cycle()
+                                self.motors.run_with_lower_duty_cycle()
                 elif mark_lap:
                     mark_lap = False
                     lap = lap + 1
@@ -293,7 +298,10 @@ class Robot:
             print('\nError in track_line: ' + str(e))
             print('\n' + traceback.format_exc())
         finally:
-            self.motors.soft_final_stop()
+            if self.infinite:
+                self.motors.soft_stop()
+            else:
+                self.motors.final_stop()
             # Propagate the exception.
             if exception:
                 raise exception
@@ -417,7 +425,10 @@ class Robot:
             print('\nError in track_line: ' + str(e))
             print('\n' + traceback.format_exc())
         finally:
-            self.motors.soft_final_stop()
+            if self.infinite:
+                self.motors.soft_stop()
+            else:
+                self.motors.final_stop()
             # Propagate the exception.
             if exception:
                 raise exception
