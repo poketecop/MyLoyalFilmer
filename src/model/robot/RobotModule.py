@@ -30,7 +30,8 @@ class Mode(Enum):
     RUN_WITH_INSTRUCTIONS = 9
     RUN_WITH_INSTRUCTIONS_AND_COLOR_TRACK = 10
     INFINITE_TRACK_LINE_AND_COLOR_TRACK = 11
-    TEST_TWO_CONSECUTIVE_FILMINGS = 12
+    INFINITE_COLOR_TRACK = 12
+    TEST_TWO_CONSECUTIVE_FILMINGS = 13
     
 class Robot:
 
@@ -130,6 +131,8 @@ class Robot:
                 self.run_with_instructions_and_color_track()
             elif self.mode == Mode.INFINITE_TRACK_LINE_AND_COLOR_TRACK.name:
                 self.infinite_track_line_and_color_track()
+            elif self.mode == Mode.INFINITE_COLOR_TRACK.name:
+                self.infinite_save_film_and_color_track()
             elif self.mode == Mode.TEST_TWO_CONSECUTIVE_FILMINGS.name:
                 self.camera.test_two_consecutive_filmings()
             
@@ -147,6 +150,19 @@ class Robot:
         # Ignore warning information
         GPIO.setwarnings(False)
 
+
+    def infinite_save_film_and_color_track(self):
+        self.infinite = True
+
+        t_start = time.time()
+
+        while time.time() < t_start + self.process_timeout:
+            self.save_film_and_color_track()
+            if not self.wait_delay:
+                continue
+
+            time.sleep(self.wait_delay)
+            
     def infinite_track_line_and_color_track(self):
         self.infinite = True
 
