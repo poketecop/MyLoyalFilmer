@@ -35,6 +35,7 @@ class Mode(Enum):
     INFINITE_TRACK_LINE_AND_COLOR_TRACK = 11
     INFINITE_COLOR_TRACK = 12
     TEST_TWO_CONSECUTIVE_FILMINGS = 13
+    INFINITE_WAIT_TRACK_LINE_WAIT_REVERSE_TRACK_LINE = 14
     
 class Robot:
 
@@ -156,6 +157,8 @@ class Robot:
                 self.infinite_save_film_and_color_track()
             elif self.mode == Mode.TEST_TWO_CONSECUTIVE_FILMINGS.name:
                 self.camera.test_two_consecutive_filmings()
+            elif self.mode == Mode.INFINITE_WAIT_TRACK_LINE_WAIT_REVERSE_TRACK_LINE.name:
+                self.infinite_wait_track_line_wait_reverse_track_line()
             
         except Exception as error:
             print(error)
@@ -492,6 +495,18 @@ class Robot:
         self.track_line()
         self.middle_wait_and_notify_start()
         self.reverse_track_line()
+
+    def infinite_wait_track_line_wait_reverse_track_line(self):
+        self.infinite = True
+
+        t_start = time.time()
+
+        while time.time() < t_start + self.process_timeout:
+            self.wait_track_line_wait_reverse_track_line()
+            if not self.wait_delay:
+                continue
+
+            time.sleep(self.wait_delay)
 
     def color_track(self):
         t_start = time.time()
