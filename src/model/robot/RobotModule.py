@@ -79,9 +79,6 @@ class Robot:
 
             if 'last_seconds' in parameter_list:
                 last_seconds = parameter_list['last_seconds']
-            
-            if 'start_delay' in parameter_list:
-                start_delay = parameter_list['start_delay']
 
             if 'tracking_laps' in parameter_list:
                 tracking_laps = parameter_list['tracking_laps']
@@ -116,7 +113,6 @@ class Robot:
         self.run_delay = float(run_delay)
         self.middle_delay = float(middle_delay)
         self.last_seconds = float(last_seconds)
-        self.last_seconds = float(start_delay)
         self.tracking_laps = int(tracking_laps)
         self.mode = mode
         self.debug = debug
@@ -289,6 +285,7 @@ class Robot:
                 
                 # Original conditions
                 
+                # The order of the following conditions is important
                 # Handle right acute angle and right right angle
                 elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
@@ -352,18 +349,19 @@ class Robot:
                 raise exception
 
     def initial_wait_and_notify_start(self):
-        self.wait_and_notify_start(self, self.initial_delay)
+        self.wait_and_notify_start(self.initial_delay)
 
     def run_wait_and_notify_start(self):
-        self.wait_and_notify_start(self, self.run_delay)
+        self.wait_and_notify_start(self.run_delay)
 
     def middle_wait_and_notify_start(self):
-        self.wait_and_notify_start(self, self.middle_delay)
+        self.wait_and_notify_start(self.middle_delay)
 
     def wait_and_notify_start(self, delay):
         if delay:
-            if delay < MIN_INITIAL_DELAY_NO_LAST_SECONDS:
+            if delay <= MIN_INITIAL_DELAY_NO_LAST_SECONDS:
                 self.rgb_lighter.about_to_start()
+                time.sleep(delay)
             else:
                 time.sleep(delay - self.last_seconds)
                 self.rgb_lighter.about_to_start()
@@ -427,32 +425,32 @@ class Robot:
                 # Original conditions
                 
                 # Handle right acute angle and right right angle
-                elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
+                elif self.tracking_module.reverse_over_right_acute_angle_or_right_right_angle():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         # Turn right in place,speed is 100,delay 80ms
                         self.motors.reverse_sharp_right()
         
                 # Handle left acute angle and left right angle 
-                elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
+                elif self.tracking_module.reverse_over_left_acute_angle_and_left_right_angle():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         # Turn right in place,speed is 100,delay 80ms  
                         self.motors.reverse_sharp_left()
         
                 # Left_sensor1 detected black line
-                elif self.tracking_module.left_sensor_1_detected_black_line():
+                elif self.tracking_module.right_sensor2_detected_black_line():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         self.motors.reverse_spin_left()
             
                 # Right_sensor2 detected black line
-                elif self.tracking_module.right_sensor2_detected_black_line():
+                elif self.tracking_module.left_sensor_1_detected_black_line():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         self.motors.reverse_spin_right()
         
-                elif self.tracking_module.middle_right_sensor_misses_black_line():
+                elif self.tracking_module.middle_left_sensor_misses_black_line():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         self.motors.reverse_left()
         
-                elif self.tracking_module.middle_left_sensor_misses_black_line():
+                elif self.tracking_module.middle_right_sensor_misses_black_line():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         self.motors.reverse_right()
 

@@ -107,6 +107,27 @@ class LineTracker:
             return True
         
         return False
+    
+    def reverse_over_right_acute_angle_or_right_right_angle(self):
+        # 4 tracking pins level status
+        # 0 X 0 0
+        # 0 X 0 1
+        # 0 X 1 0
+
+        # Handle reverse over right acute angle and right right angle
+        if (self.TrackSensorLeftValue1 == False and 
+            (self.TrackSensorRightValue1 == False or self.TrackSensorRightValue2 == False)):
+
+            if self.current_tracking_option == LineTrackingOptions.OVER_RIGHT_ACUTE_ANGLE_OR_RIGHT_RIGHT_ANGLE:
+                self.consecutive_tracking_option_times += 1
+            else:
+                self.consecutive_tracking_option_times = 0
+                # Set current tracking option to reverse over right acute angle or right right angle.
+                self.current_tracking_option = LineTrackingOptions.OVER_RIGHT_ACUTE_ANGLE_OR_RIGHT_RIGHT_ANGLE
+
+            return True
+
+        return False
 
     def over_left_acute_angle_and_left_right_angle(self):
         # 4 tracking pins level status
@@ -126,6 +147,27 @@ class LineTracker:
 
             return True
 
+        return False
+
+    def reverse_over_left_acute_angle_and_left_right_angle(self):
+        # 4 tracking pins level status
+        # 0 0 X 0
+        # 1 0 X 0
+        # 0 1 X 0
+
+        # Handle reverse over left acute angle and left right angle
+        if ((self.TrackSensorLeftValue1 == False or self.TrackSensorLeftValue2 == False) and
+                    self.TrackSensorRightValue2 == False):
+
+            if self.current_tracking_option == LineTrackingOptions.REVERSE_OVER_LEFT_ACUTE_ANGLE_AND_LEFT_RIGHT_ANGLE:
+                self.consecutive_tracking_option_times += 1
+            else:
+                self.consecutive_tracking_option_times = 0
+                # Set current tracking option to reverse over left acute angle and left right angle.
+                self.current_tracking_option = LineTrackingOptions.REVERSE_OVER_LEFT_ACUTE_ANGLE_AND_LEFT_RIGHT_ANGLE
+
+            return True
+        
         return False
 
     def left_sensor_1_detected_black_line(self):
