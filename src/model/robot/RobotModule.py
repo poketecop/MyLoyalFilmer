@@ -11,11 +11,14 @@ import traceback
 
 DEFAULT_PROCESS_TIMEOUT = 10
 DEFAULT_INITIAL_DELAY = 2
+DEFAULT_RUN_DELAY = 0
+DEFAULT_MIDDLE_DELAY = 0
 DEFAULT_TRACKING_LAPS = 1
 FINAL_DELAY = 5
 LAP_DELAY = 0
 WAIT_DELAY = 10
-LAST_SECONDS = 4
+MIN_INITIAL_DELAY_NO_LAST_SECONDS = 2
+DEFAULT_LAST_SECONDS = 3
 DEFAULT_INSTRUCTIONS = "Run,5"
 
 class Mode(Enum):
@@ -41,6 +44,8 @@ class Robot:
     rgb_lighter = None
     process_timeout = None
     initial_delay = None
+    last_seconds = None
+    run_delay = None
     final_delay = None
     lap_delay = None
     wait_delay = None
@@ -54,7 +59,7 @@ class Robot:
 
     tracking_finished = False
 
-    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False, final_delay = FINAL_DELAY, instructions = DEFAULT_INSTRUCTIONS, reverse = False, lap_delay = LAP_DELAY, wait_delay = WAIT_DELAY):
+    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, run_delay = DEFAULT_RUN_DELAY, middle_delay = DEFAULT_MIDDLE_DELAY, last_seconds = DEFAULT_LAST_SECONDS, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False, final_delay = FINAL_DELAY, instructions = DEFAULT_INSTRUCTIONS, reverse = False, lap_delay = LAP_DELAY, wait_delay = WAIT_DELAY):
         if parameter_list:
             if 'mode' in parameter_list:
                 mode = parameter_list['mode']
@@ -64,6 +69,18 @@ class Robot:
             
             if 'initial_delay' in parameter_list:
                 initial_delay = parameter_list['initial_delay']
+
+            if 'run_delay' in parameter_list:
+                run_delay = parameter_list['run_delay']
+            
+            if 'middle_delay' in parameter_list:
+                middle_delay = parameter_list['middle_delay']
+
+            if 'last_seconds' in parameter_list:
+                last_seconds = parameter_list['last_seconds']
+            
+            if 'start_delay' in parameter_list:
+                start_delay = parameter_list['start_delay']
 
             if 'tracking_laps' in parameter_list:
                 tracking_laps = parameter_list['tracking_laps']
@@ -95,6 +112,10 @@ class Robot:
         
         self.process_timeout = int(process_timeout)
         self.initial_delay = float(initial_delay)
+        self.run_delay = float(run_delay)
+        self.middle_delay = float(middle_delay)
+        self.last_seconds = float(last_seconds)
+        self.last_seconds = float(start_delay)
         self.tracking_laps = int(tracking_laps)
         self.mode = mode
         self.debug = debug
@@ -110,9 +131,9 @@ class Robot:
         try:
             if self.mode == Mode.TRACK_LINE.name:
                 if self.reverse:
-                    self.reverse_track_line()
+                    self.wait_and_reverse_track_line()
                 else:
-                    self.track_line()
+                    self.wait_and_track_line()
             elif self.mode == Mode.FILM.name:
                 self.camera.film()
             elif self.mode == Mode.COLOR_TRACK.name:
@@ -207,6 +228,10 @@ class Robot:
         while thread1.is_alive():
             time.sleep(2)
     
+    def wait_and_track_line(self):
+        self.initial_wait_and_notify_start()
+        self.track_line()
+    
     def track_line(self):
         # False means that sensor is over the black line
         # If the the sensor is over the black line, 
@@ -216,8 +241,6 @@ class Robot:
 
         # delay 2s	
         exception = None
-
-        self.wait_and_notify_start()
 
         timeout = self.process_timeout   # [seconds]
 
@@ -325,14 +348,27 @@ class Robot:
             if exception:
                 raise exception
 
-    def wait_and_notify_start(self):
-        if self.initial_delay:
-            if self.initial_delay < 3:
+    def initial_wait_and_notify_start(self):
+        self.wait_and_notify_start(self, self.initial_delay)
+
+    def run_wait_and_notify_start(self):
+        self.wait_and_notify_start(self, self.run_delay)
+
+    def middle_wait_and_notify_start(self):
+        self.wait_and_notify_start(self, self.middle_delay)
+
+    def wait_and_notify_start(self, delay):
+        if delay:
+            if delay < MIN_INITIAL_DELAY_NO_LAST_SECONDS:
                 self.rgb_lighter.about_to_start()
             else:
-                time.sleep(self.initial_delay - LAST_SECONDS)
+                time.sleep(delay - self.last_seconds)
                 self.rgb_lighter.about_to_start()
-                time.sleep(LAST_SECONDS)
+                time.sleep(self.last_seconds)
+
+    def wait_and_reverse_track_line(self):
+        self.initial_wait_and_notify_start()
+        self.reverse_track_line()
 
     def reverse_track_line(self):
         # False means that sensor is over the black line
@@ -342,8 +378,6 @@ class Robot:
         # light is returned to the sensor (True)
         exception = None
         # delay 2s	
-
-        self.wait_and_notify_start()
 
         timeout = self.process_timeout   # [seconds]
 
@@ -451,6 +485,13 @@ class Robot:
             # Propagate the exception.
             if exception:
                 raise exception
+            
+    def wait_track_line_wait_reverse_track_line(self):
+        self.initial_wait_and_notify_start()
+        self.run_wait_and_notify_start()
+        self.track_line()
+        self.middle_wait_and_notify_start()
+        self.reverse_track_line()
 
     def color_track(self):
         t_start = time.time()
