@@ -348,29 +348,6 @@ class Robot:
             if exception:
                 raise exception
 
-    def initial_wait_and_notify_start(self):
-        self.wait_and_notify_start(self.initial_delay)
-
-    def run_wait_and_notify_start(self):
-        self.wait_and_notify_start(self.run_delay)
-
-    def middle_wait_and_notify_start(self):
-        self.wait_and_notify_start(self.middle_delay)
-
-    def wait_and_notify_start(self, delay):
-        if delay:
-            if delay <= MIN_INITIAL_DELAY_NO_LAST_SECONDS:
-                self.rgb_lighter.about_to_start()
-                time.sleep(delay)
-            else:
-                time.sleep(delay - self.last_seconds)
-                self.rgb_lighter.about_to_start()
-                time.sleep(self.last_seconds)
-
-    def wait_and_reverse_track_line(self):
-        self.initial_wait_and_notify_start()
-        self.reverse_track_line()
-
     def reverse_track_line(self):
         # False means that sensor is over the black line
         # If the the sensor is over the black line, 
@@ -486,6 +463,29 @@ class Robot:
             # Propagate the exception.
             if exception:
                 raise exception
+
+    def initial_wait_and_notify_start(self):
+        self.wait_and_notify_start(self.initial_delay)
+
+    def run_wait_and_notify_start(self):
+        self.wait_and_notify_start(self.run_delay)
+
+    def middle_wait_and_notify_start(self):
+        self.wait_and_notify_start(self.middle_delay)
+
+    def wait_and_notify_start(self, delay):
+        if delay:
+            if delay <= MIN_INITIAL_DELAY_NO_LAST_SECONDS:
+                self.rgb_lighter.about_to_start()
+                time.sleep(delay)
+            else:
+                time.sleep(delay - self.last_seconds)
+                self.rgb_lighter.about_to_start()
+                time.sleep(self.last_seconds)
+
+    def wait_and_reverse_track_line(self):
+        self.initial_wait_and_notify_start()
+        self.reverse_track_line()
             
     def wait_track_line_wait_reverse_track_line(self):
         self.initial_wait_and_notify_start()

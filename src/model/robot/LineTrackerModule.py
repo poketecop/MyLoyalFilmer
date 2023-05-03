@@ -159,12 +159,12 @@ class LineTracker:
         if ((self.TrackSensorLeftValue1 == False or self.TrackSensorLeftValue2 == False) and
                     self.TrackSensorRightValue2 == False):
 
-            if self.current_tracking_option == LineTrackingOptions.REVERSE_OVER_LEFT_ACUTE_ANGLE_AND_LEFT_RIGHT_ANGLE:
+            if self.current_tracking_option == LineTrackingOptions.OVER_LEFT_ACUTE_ANGLE_AND_LEFT_RIGHT_ANGLE:
                 self.consecutive_tracking_option_times += 1
             else:
                 self.consecutive_tracking_option_times = 0
                 # Set current tracking option to reverse over left acute angle and left right angle.
-                self.current_tracking_option = LineTrackingOptions.REVERSE_OVER_LEFT_ACUTE_ANGLE_AND_LEFT_RIGHT_ANGLE
+                self.current_tracking_option = LineTrackingOptions.OVER_LEFT_ACUTE_ANGLE_AND_LEFT_RIGHT_ANGLE
 
             return True
         
