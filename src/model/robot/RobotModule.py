@@ -298,13 +298,13 @@ class Robot:
                         # Turn right in place,speed is 100,delay 80ms  
                         self.motors.sharp_left()
         
-                # Left_sensor1 detected black line
-                elif self.tracking_module.left_sensor_1_detected_black_line():
+                # Left_sensor detected black line
+                elif self.tracking_module.left_sensor_detected_black_line():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         self.motors.spin_left()
             
-                # Right_sensor2 detected black line
-                elif self.tracking_module.right_sensor2_detected_black_line():
+                # Right_sensor detected black line
+                elif self.tracking_module.right_sensor_detected_black_line():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         self.motors.spin_right()
         
@@ -399,35 +399,13 @@ class Robot:
                     lap = lap + 1
                     lap_delayed = False
                 
-                # Original conditions
-                
-                # Handle right acute angle and right right angle
-                elif self.tracking_module.reverse_over_right_acute_angle_or_right_right_angle():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        # Turn right in place,speed is 100,delay 80ms
-                        self.motors.reverse_sharp_right()
-        
-                # Handle left acute angle and left right angle 
-                elif self.tracking_module.reverse_over_left_acute_angle_and_left_right_angle():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        # Turn right in place,speed is 100,delay 80ms  
-                        self.motors.reverse_sharp_left()
-        
-                # Left_sensor1 detected black line
-                elif self.tracking_module.right_sensor2_detected_black_line():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        self.motors.reverse_spin_left()
-            
-                # Right_sensor2 detected black line
-                elif self.tracking_module.left_sensor_1_detected_black_line():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        self.motors.reverse_spin_right()
-        
-                elif self.tracking_module.middle_left_sensor_misses_black_line():
+                # Left_sensor detected black line
+                elif self.tracking_module.reverse_left_sensor_detected_black_line():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         self.motors.reverse_left()
-        
-                elif self.tracking_module.middle_right_sensor_misses_black_line():
+
+                # Right_sensor detected black line
+                elif self.tracking_module.reverse_right_sensor_detected_black_line():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         self.motors.reverse_right()
 
@@ -435,15 +413,18 @@ class Robot:
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
                         self.motors.reverse_run()
                 else:
-                    # When the every sensor is NOT over the black line, the car keeps the previous running state.
+                    
                     if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
                         self.tracking_module.consecutive_tracking_option_times += 1
+
+                        if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.reverse_consistent_track_lost_consecutive_times:
+                            self.motors.reverse_run()
                     
-                        if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
+                        if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.reverse_track_lost_consecutive_times:
                             # print consecutive_tracking_option_times
                             print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
-                            # print track_lost_consecutive_times
-                            print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
+                            # print reverse_track_lost_consecutive_times
+                            print('\nreverse_track_lost_consecutive_times: ' + str(self.tracking_module.reverse_track_lost_consecutive_times))
 
                             print('\nTrack lost')
                             break
@@ -680,7 +661,7 @@ class Robot:
             action = instruction_list[0]
 
             if len(instruction_list) > 1:
-                instrucion_time = int(instruction_list[1])
+                instrucion_time = float(instruction_list[1])
             else:
                 instrucion_time = None
 
@@ -698,7 +679,7 @@ class Robot:
                     self.motors.run()
                 time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.STOP.name:
-                self.motors.soft_final_stop()
+                self.motors.soft_stop()
                 time.sleep(instrucion_time)
             elif action.upper() == MotorsModule.Action.LEFT.name:
                 if duty_cycle:

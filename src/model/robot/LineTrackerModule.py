@@ -6,13 +6,15 @@ import time
 CONSISTENT_CONSECUTIVE_TIMES = 0
 CONSISTENT_STOP_CONSECUTIVE_TIMES = 1
 TRACK_LOST_CONSECUTIVE_TIMES = 100000
+REVERSE_TRACK_LOST_CONSECUTIVE_TIMES = 150000
+REVERSE_CONSISTENT_TRACK_LOST_CONSECUTIVE_TIMES = 1000
 
 class LineTrackingOptions(Enum):
     EVERY_SENSOR_OVER_BLACK = 0
     OVER_RIGHT_ACUTE_ANGLE_OR_RIGHT_RIGHT_ANGLE = 1
     OVER_LEFT_ACUTE_ANGLE_AND_LEFT_RIGHT_ANGLE = 2
-    LEFT_SENSOR_1_DETECTED_BLACK_LINE = 3
-    RIGHT_SENSOR2_DETECTED_BLACK_LINE = 4
+    LEFT_SENSOR_DETECTED_BLACK_LINE = 3
+    RIGHT_SENSOR_DETECTED_BLACK_LINE = 4
     MIDDLE_RIGHT_SENSOR_MISSES_BLACK_LINE = 5
     MIDDLE_LEFT_SENSOR_MISSES_BLACK_LINE = 6
     BOTH_MIDDLE_SENSORS_OVER_BLACK_LINE = 7
@@ -40,8 +42,10 @@ class LineTracker:
 
     consistent_consecutive_times = None
     track_lost_consecutive_times = None
+    reverse_track_lost_consecutive_times = None
+    reverse_consistent_track_lost_consecutive_times = None
 
-    def __init__(self, parameter_list, consistent_consecutive_times = CONSISTENT_CONSECUTIVE_TIMES, consistent_stop_consecutive_times = CONSISTENT_STOP_CONSECUTIVE_TIMES, track_lost_consecutive_times = TRACK_LOST_CONSECUTIVE_TIMES):
+    def __init__(self, parameter_list, consistent_consecutive_times = CONSISTENT_CONSECUTIVE_TIMES, consistent_stop_consecutive_times = CONSISTENT_STOP_CONSECUTIVE_TIMES, track_lost_consecutive_times = TRACK_LOST_CONSECUTIVE_TIMES, reverse_track_lost_consecutive_times = REVERSE_TRACK_LOST_CONSECUTIVE_TIMES, reverse_consistent_track_lost_consecutive_times = REVERSE_CONSISTENT_TRACK_LOST_CONSECUTIVE_TIMES):
         if parameter_list:
             if 'consistent_consecutive_times' in parameter_list:
                 consistent_consecutive_times = parameter_list['consistent_consecutive_times']
@@ -49,11 +53,15 @@ class LineTracker:
                 consistent_stop_consecutive_times = parameter_list['consistent_stop_consecutive_times']
             if 'track_lost_consecutive_times' in parameter_list:
                 track_lost_consecutive_times = parameter_list['track_lost_consecutive_times']
+            if 'reverse_track_lost_consecutive_times' in parameter_list:
+                reverse_track_lost_consecutive_times = parameter_list['reverse_track_lost_consecutive_times']
         
         self.consecutive_tracking_option_times = 0
         self.consistent_consecutive_times = int(consistent_consecutive_times)
         self.consistent_stop_consecutive_times = int(consistent_stop_consecutive_times)
         self.track_lost_consecutive_times = int(track_lost_consecutive_times)
+        self.reverse_track_lost_consecutive_times = int(reverse_track_lost_consecutive_times)
+        self.reverse_consistent_track_lost_consecutive_times = int(reverse_consistent_track_lost_consecutive_times)
         
         GPIO.setup(TrackSensorLeftPin1,GPIO.IN)
         GPIO.setup(TrackSensorLeftPin2,GPIO.IN)
@@ -170,37 +178,43 @@ class LineTracker:
         
         return False
 
-    def left_sensor_1_detected_black_line(self):
+    def left_sensor_detected_black_line(self):
         # 0 X X X
-        #Left_sensor1 detected black line
+        #Left_sensor detected black line
         if (self.TrackSensorLeftValue1 == False):
 
-            if self.current_tracking_option == LineTrackingOptions.LEFT_SENSOR_1_DETECTED_BLACK_LINE:
+            if self.current_tracking_option == LineTrackingOptions.LEFT_SENSOR_DETECTED_BLACK_LINE:
                 self.consecutive_tracking_option_times += 1
             else:
                 self.consecutive_tracking_option_times = 0
                 # Set current tracking option to left sensor 1 detected black line.
-                self.current_tracking_option = LineTrackingOptions.LEFT_SENSOR_1_DETECTED_BLACK_LINE
+                self.current_tracking_option = LineTrackingOptions.LEFT_SENSOR_DETECTED_BLACK_LINE
 
             return True
 
         return False
+    
+    def reverse_left_sensor_detected_black_line(self):
+        return self.right_sensor_detected_black_line()
 
-    def right_sensor2_detected_black_line(self):
+    def right_sensor_detected_black_line(self):
         # X X X 0
-        # Right_sensor2 detected black line
+        # Right_sensor detected black line
         if (self.TrackSensorRightValue2 == False):
 
-            if self.current_tracking_option == LineTrackingOptions.RIGHT_SENSOR2_DETECTED_BLACK_LINE:
+            if self.current_tracking_option == LineTrackingOptions.RIGHT_SENSOR_DETECTED_BLACK_LINE:
                 self.consecutive_tracking_option_times += 1
             else:
                 self.consecutive_tracking_option_times = 0
                 # Set current tracking option to right sensor 2 detected black line.
-                self.current_tracking_option = LineTrackingOptions.RIGHT_SENSOR2_DETECTED_BLACK_LINE
+                self.current_tracking_option = LineTrackingOptions.RIGHT_SENSOR_DETECTED_BLACK_LINE
 
             return True
         
         return False
+    
+    def reverse_right_sensor_detected_black_line(self):
+        return self.left_sensor_detected_black_line()
 
     def middle_right_sensor_misses_black_line(self):
         # 4 tracking pins level status
