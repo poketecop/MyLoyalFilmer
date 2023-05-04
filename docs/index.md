@@ -93,7 +93,7 @@ cd  Yahboom_Project/MyLoyalFilmer/src
 
 ### Servo movement notes
 
-Servos turn better degree by degree. Pulse widht unit by pulse width unit works bad. Direct turning works good but is inconsistent.
+Servos turn better degree by degree. Pulse width unit by pulse width unit works bad. Direct turning works good but is inconsistent.
 
 Test.
 
