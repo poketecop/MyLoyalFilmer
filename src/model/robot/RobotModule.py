@@ -35,7 +35,8 @@ class Mode(Enum):
     INFINITE_TRACK_LINE_AND_COLOR_TRACK = 11
     INFINITE_COLOR_TRACK = 12
     TEST_TWO_CONSECUTIVE_FILMINGS = 13
-    INFINITE_WAIT_TRACK_LINE_WAIT_REVERSE_TRACK_LINE = 14
+    INFINITE_WAIT_TRACK_LINE_WAIT_REVERSE_TRACK_LINE = 14,
+    INFINITE_TRACK_LINE = 15,
     
 class Robot:
 
@@ -155,6 +156,9 @@ class Robot:
                 self.camera.test_two_consecutive_filmings()
             elif self.mode == Mode.INFINITE_WAIT_TRACK_LINE_WAIT_REVERSE_TRACK_LINE.name:
                 self.infinite_wait_track_line_wait_reverse_track_line()
+            elif self.mode == Mode.INFINITE_TRACK_LINE.name:
+                self.infinite_track_line()
+
             
         except Exception as error:
             print(error)
@@ -182,6 +186,18 @@ class Robot:
                 continue
 
             time.sleep(self.wait_delay)
+        
+    def infinite_track_line(self):
+        self.infinite = True
+
+        t_start = time.time()
+
+        while time.time() < t_start + self.process_timeout:
+            self.wait_and_track_line()
+            if self.wait_delay:
+                time.sleep(self.wait_delay)
+
+            self.track_line()
             
     def infinite_track_line_and_color_track(self):
         self.infinite = True
@@ -267,11 +283,11 @@ class Robot:
                 # 0 0 0 0
                 if self.tracking_module.every_sensor_over_black():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_stop_consecutive_times:
+                        if self.infinite or lap >= self.tracking_laps:
+                            break
+                        
                         mark_lap = True
                         
-                        if lap >= self.tracking_laps:
-                            break
-
                         if lap > 0 and not lap_delayed:
                             if self.lap_delay:
                                 self.motors.soft_stop()
