@@ -98,6 +98,9 @@ class Motors:
         self.right_motor.ChangeDutyCycle(left_duty_cycle)
         self.left_motor.ChangeDutyCycle(right_duty_cycle)
 
+    def set_lower_desired_duty_cycle(self):
+        self.desired_left_duty_cycle, self.desired_right_duty_cycle = self.get_lower_duty_cycle()
+
     def get_lower_duty_cycle(self):
         if DEFAULT_DESIRED_DUTY_CYCLE < self.desired_left_duty_cycle:
             left_duty_cycle = DEFAULT_DESIRED_DUTY_CYCLE

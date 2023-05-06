@@ -5,8 +5,9 @@ import time
 
 CONSISTENT_CONSECUTIVE_TIMES = 0
 CONSISTENT_STOP_CONSECUTIVE_TIMES = 1
-TRACK_LOST_CONSECUTIVE_TIMES = 100000
-REVERSE_TRACK_LOST_CONSECUTIVE_TIMES = 150000
+CONSISTENT_SPIN_CONSECUTIVE_TIMES = 2
+TRACK_LOST_CONSECUTIVE_TIMES = 150000
+REVERSE_TRACK_LOST_CONSECUTIVE_TIMES = 200000
 REVERSE_CONSISTENT_TRACK_LOST_CONSECUTIVE_TIMES = 1000
 
 class LineTrackingOptions(Enum):
@@ -41,16 +42,20 @@ class LineTracker:
     consecutive_tracking_option_times = None
 
     consistent_consecutive_times = None
+    consistent_stop_consecutive_times = None
+    consistent_spin_consecutive_times = None
     track_lost_consecutive_times = None
     reverse_track_lost_consecutive_times = None
     reverse_consistent_track_lost_consecutive_times = None
 
-    def __init__(self, parameter_list, consistent_consecutive_times = CONSISTENT_CONSECUTIVE_TIMES, consistent_stop_consecutive_times = CONSISTENT_STOP_CONSECUTIVE_TIMES, track_lost_consecutive_times = TRACK_LOST_CONSECUTIVE_TIMES, reverse_track_lost_consecutive_times = REVERSE_TRACK_LOST_CONSECUTIVE_TIMES, reverse_consistent_track_lost_consecutive_times = REVERSE_CONSISTENT_TRACK_LOST_CONSECUTIVE_TIMES):
+    def __init__(self, parameter_list, consistent_consecutive_times = CONSISTENT_CONSECUTIVE_TIMES, consistent_stop_consecutive_times = CONSISTENT_STOP_CONSECUTIVE_TIMES, consistent_spin_consecutive_times = CONSISTENT_SPIN_CONSECUTIVE_TIMES, track_lost_consecutive_times = TRACK_LOST_CONSECUTIVE_TIMES, reverse_track_lost_consecutive_times = REVERSE_TRACK_LOST_CONSECUTIVE_TIMES, reverse_consistent_track_lost_consecutive_times = REVERSE_CONSISTENT_TRACK_LOST_CONSECUTIVE_TIMES):
         if parameter_list:
             if 'consistent_consecutive_times' in parameter_list:
                 consistent_consecutive_times = parameter_list['consistent_consecutive_times']
             if 'consistent_stop_consecutive_times' in parameter_list:
                 consistent_stop_consecutive_times = parameter_list['consistent_stop_consecutive_times']
+            if 'consistent_spin_consecutive_times' in parameter_list:
+                consistent_spin_consecutive_times = parameter_list['consistent_spin_consecutive_times']
             if 'track_lost_consecutive_times' in parameter_list:
                 track_lost_consecutive_times = parameter_list['track_lost_consecutive_times']
             if 'reverse_track_lost_consecutive_times' in parameter_list:
@@ -59,6 +64,7 @@ class LineTracker:
         self.consecutive_tracking_option_times = 0
         self.consistent_consecutive_times = int(consistent_consecutive_times)
         self.consistent_stop_consecutive_times = int(consistent_stop_consecutive_times)
+        self.consistent_spin_consecutive_times = int(consistent_spin_consecutive_times)
         self.track_lost_consecutive_times = int(track_lost_consecutive_times)
         self.reverse_track_lost_consecutive_times = int(reverse_track_lost_consecutive_times)
         self.reverse_consistent_track_lost_consecutive_times = int(reverse_consistent_track_lost_consecutive_times)

@@ -246,7 +246,104 @@ class Robot:
     def wait_and_track_line(self):
         self.initial_wait_and_notify_start()
         self.track_line()
+
+    def return_to_simple_straight_line_start(self):
+        exception = None
+
+        timeout = self.process_timeout   # [seconds]
+
+        timeout_start = time.time()
+
+        try:
+            while time.time() < timeout_start + timeout:
+                self.tracking_module.set_sensors_input_value()
+
+                if not self.tracking_module.every_sensor_over_black():
+                    break
+
+                self.motors.run_with_lower_duty_cycle()
+            
+            aux_desired_duty_cycle = self.motors.desired_left_duty_cycle
+            self.motors.set_lower_desired_duty_cycle()
+            
+            while time.time() < timeout_start + timeout:
+                self.tracking_module.set_sensors_input_value()
+
+                if self.tracking_module.both_middle_sensors_over_black_line():
+                    self.motors.init_desired_duty_cycle(aux_desired_duty_cycle)
+                    return
+
+                self.adjust_to_line()
+
+        except Exception as e:
+            exception = e
+            print('\nError in track_line: ' + str(e))
+            print('\n' + traceback.format_exc())
+        finally:
+            self.motors.soft_stop()
+
+            # Propagate the exception.
+            if exception:
+                raise exception
     
+    def adjust_to_line(self):
+        # The order of the following conditions is important
+        # Handle right acute angle and right right angle
+        if self.tracking_module.over_right_acute_angle_or_right_right_angle():
+            if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_spin_consecutive_times:
+                # Turn right in place,speed is 100,delay 80ms
+                self.motors.sharp_right()
+
+        # Handle left acute angle and left right angle 
+        elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
+            if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_spin_consecutive_times:
+                # Turn right in place,speed is 100,delay 80ms  
+                self.motors.sharp_left()
+
+        # Left_sensor detected black line
+        elif self.tracking_module.left_sensor_detected_black_line():
+            if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_spin_consecutive_times:
+                self.motors.spin_left()
+    
+        # Right_sensor detected black line
+        elif self.tracking_module.right_sensor_detected_black_line():
+            if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                self.motors.spin_right()
+
+        elif self.tracking_module.middle_right_sensor_misses_black_line():
+            if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                self.motors.left()
+
+        elif self.tracking_module.middle_left_sensor_misses_black_line():
+            if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                self.motors.right()
+
+        elif self.tracking_module.both_middle_sensors_over_black_line():
+            if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
+                self.motors.run()
+        else:
+            # When the every sensor is NOT over the black line
+
+            if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
+                self.tracking_module.consecutive_tracking_option_times += 1
+            
+                if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
+                    # print consecutive_tracking_option_times
+                    print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
+                    # print track_lost_consecutive_times
+                    print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
+
+                    print('\nTrack lost')
+                    
+                    return False
+            else:
+                # The car keeps the previous running state.
+
+                self.tracking_module.consecutive_tracking_option_times = 0
+                self.tracking_module.current_tracking_option = LineTrackerModule.LineTrackingOptions.TRACK_LOST
+                    
+        return True
+
     def track_line(self):
         # False means that sensor is over the black line
         # If the the sensor is over the black line, 
@@ -263,17 +360,11 @@ class Robot:
 
         lap = 0
         mark_lap = False
-        lap_delayed = False
+        mark_lap_times = 0
+        consistent_mark_lap_times = 2
 
         try:
-            while time.time() < timeout_start + timeout:
-                self.tracking_module.set_sensors_input_value()
-
-                self.motors.run_with_lower_duty_cycle()
-
-                if not self.tracking_module.every_sensor_over_black():
-                    break
-
+            
             # consecutive_tracking_option_times is managed in LineTrackerModule.py
             while time.time() < timeout_start + timeout:
                 
@@ -283,74 +374,33 @@ class Robot:
                 # 0 0 0 0
                 if self.tracking_module.every_sensor_over_black():
                     if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_stop_consecutive_times:
-                        if self.infinite or lap >= self.tracking_laps:
-                            break
                         
-                        mark_lap = True
-                        
-                        if lap > 0 and not lap_delayed:
+                        if not mark_lap:
+                            mark_lap = True
+
+                            lap = lap + 1
+
                             if self.lap_delay:
                                 self.motors.soft_stop()
                                 time.sleep(self.lap_delay)
-                                lap_delayed = True
-                                self.motors.run_with_lower_duty_cycle()
-                elif mark_lap:
-                    mark_lap = False
-                    lap = lap + 1
-                    lap_delayed = False
-                
-                # Original conditions
-                
-                # The order of the following conditions is important
-                # Handle right acute angle and right right angle
-                elif self.tracking_module.over_right_acute_angle_or_right_right_angle():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        # Turn right in place,speed is 100,delay 80ms
-                        self.motors.sharp_right()
-        
-                # Handle left acute angle and left right angle 
-                elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        # Turn right in place,speed is 100,delay 80ms  
-                        self.motors.sharp_left()
-        
-                # Left_sensor detected black line
-                elif self.tracking_module.left_sensor_detected_black_line():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        self.motors.spin_left()
-            
-                # Right_sensor detected black line
-                elif self.tracking_module.right_sensor_detected_black_line():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        self.motors.spin_right()
-        
-                elif self.tracking_module.middle_right_sensor_misses_black_line():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        self.motors.left()
-        
-                elif self.tracking_module.middle_left_sensor_misses_black_line():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        self.motors.right()
 
-                elif self.tracking_module.both_middle_sensors_over_black_line():
-                    if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_consecutive_times:
-                        self.motors.run()
+                            if lap >= self.tracking_laps:
+                                break
+
+                            self.motors.run_with_lower_duty_cycle()
                 else:
-                    # When the every sensor is NOT over the black line, the car keeps the previous running state.
-                    if self.tracking_module.current_tracking_option == LineTrackerModule.LineTrackingOptions.TRACK_LOST:
-                        self.tracking_module.consecutive_tracking_option_times += 1
+                    if mark_lap:
+                        mark_lap_times = mark_lap_times + 1
+                        
+                        if mark_lap_times > consistent_mark_lap_times:
+                            mark_lap = False
+                
+                    if (not self.adjust_to_line()):
+                        break
                     
-                        if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.track_lost_consecutive_times:
-                            # print consecutive_tracking_option_times
-                            print('\nconsecutive_tracking_option_times: ' + str(self.tracking_module.consecutive_tracking_option_times))
-                            # print track_lost_consecutive_times
-                            print('\ntrack_lost_consecutive_times: ' + str(self.tracking_module.track_lost_consecutive_times))
-
-                            print('\nTrack lost')
-                            break
-                    else:
-                        self.tracking_module.consecutive_tracking_option_times = 0
-                        self.tracking_module.current_tracking_option = LineTrackerModule.LineTrackingOptions.TRACK_LOST
+            # The car stops in a multiple horizontal black line so in order to start again in a future run
+            # the car must return to the place where the line is a simple straight line
+            self.return_to_simple_straight_line_start()
         except Exception as e:
             exception = e
             print('\nError in track_line: ' + str(e))
