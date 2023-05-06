@@ -288,20 +288,8 @@ class Robot:
     
     def adjust_to_line(self):
         # The order of the following conditions is important
-        # Handle right acute angle and right right angle
-        if self.tracking_module.over_right_acute_angle_or_right_right_angle():
-            if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_spin_consecutive_times:
-                # Turn right in place,speed is 100,delay 80ms
-                self.motors.sharp_right()
-
-        # Handle left acute angle and left right angle 
-        elif self.tracking_module.over_left_acute_angle_and_left_right_angle():
-            if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_spin_consecutive_times:
-                # Turn right in place,speed is 100,delay 80ms  
-                self.motors.sharp_left()
-
         # Left_sensor detected black line
-        elif self.tracking_module.left_sensor_detected_black_line():
+        if self.tracking_module.left_sensor_detected_black_line():
             if self.tracking_module.consecutive_tracking_option_times >= self.tracking_module.consistent_spin_consecutive_times:
                 self.motors.spin_left()
     
