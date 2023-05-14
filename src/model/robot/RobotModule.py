@@ -21,6 +21,10 @@ MIN_INITIAL_DELAY_NO_LAST_SECONDS = 2
 DEFAULT_LAST_SECONDS = 3
 DEFAULT_INSTRUCTIONS = "Run,5"
 
+SPIN_TO_REVERSE_CONSISTENT_OUT_OF_BLACK_LINE = 3
+SPIN_TO_REVERSE_CONSISTENT_IN_BLACK_LINE = 2
+CAR_STRAIGHT = 10
+
 class Mode(Enum):
     TRACK_LINE = 1
     FILM = 2
@@ -66,7 +70,11 @@ class Robot:
 
     tracking_finished = False
 
-    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, run_delay = DEFAULT_RUN_DELAY, middle_delay = DEFAULT_MIDDLE_DELAY, last_seconds = DEFAULT_LAST_SECONDS, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False, final_delay = FINAL_DELAY, instructions = DEFAULT_INSTRUCTIONS, reverse = False, lap_delay = LAP_DELAY, wait_delay = WAIT_DELAY):
+    spin_to_reverse_consistent_out_of_black_line = None
+    spin_to_reverse_consistent_in_black_line = None
+    car_straight = None
+
+    def __init__(self, parameter_list, process_timeout = DEFAULT_PROCESS_TIMEOUT, initial_delay = DEFAULT_INITIAL_DELAY, run_delay = DEFAULT_RUN_DELAY, middle_delay = DEFAULT_MIDDLE_DELAY, last_seconds = DEFAULT_LAST_SECONDS, tracking_laps = DEFAULT_TRACKING_LAPS, mode = Mode.TRACK_LINE_AND_COLOR_TRACK.name, debug = False, final_delay = FINAL_DELAY, instructions = DEFAULT_INSTRUCTIONS, reverse = False, lap_delay = LAP_DELAY, wait_delay = WAIT_DELAY, spin_to_reverse_consistent_out_of_black_line = SPIN_TO_REVERSE_CONSISTENT_OUT_OF_BLACK_LINE, spin_to_reverse_consistent_in_black_line = SPIN_TO_REVERSE_CONSISTENT_IN_BLACK_LINE, car_straight = CAR_STRAIGHT):
         if parameter_list:
             if 'mode' in parameter_list:
                 mode = parameter_list['mode']
@@ -107,6 +115,15 @@ class Robot:
             if 'wait_delay' in parameter_list:
                 wait_delay = parameter_list['wait_delay']
 
+            if 'spin_to_reverse_consistent_out_of_black_line' in parameter_list:
+                spin_to_reverse_consistent_out_of_black_line = parameter_list['spin_to_reverse_consistent_out_of_black_line']
+            
+            if 'spin_to_reverse_consistent_in_black_line' in parameter_list:
+                spin_to_reverse_consistent_in_black_line = parameter_list['spin_to_reverse_consistent_in_black_line']
+            
+            if 'car_straight' in parameter_list:
+                car_straight = parameter_list['car_straight']
+
         self.init_pin_numbering_mode()
 
         self.motors = MotorsModule.Motors(parameter_list)
@@ -129,6 +146,10 @@ class Robot:
         self.reverse = reverse
 
         self.infinite = False
+
+        self.spin_to_reverse_consistent_out_of_black_line = spin_to_reverse_consistent_out_of_black_line
+        self.spin_to_reverse_consistent_in_black_line = spin_to_reverse_consistent_in_black_line
+        self.car_straight = car_straight
         
     def play(self):
         try:
@@ -267,7 +288,6 @@ class Robot:
 
         timeout_start = time.time()
 
-        consistent_out_of_black_line = 2
         out_of_black_line = 0
 
         try:
@@ -277,16 +297,22 @@ class Robot:
                 if self.tracking_module.none_sensors_over_black_line():
                     out_of_black_line += 1
 
-                    if out_of_black_line >= consistent_out_of_black_line:
+                    if out_of_black_line >= self.spin_to_reverse_consistent_out_of_black_line:
                         break
                 else:
                     out_of_black_line = 0
             
+            in_black_line = 0
             while time.time() < timeout_start + timeout:
                 self.tracking_module.set_sensors_input_value()
 
                 if (self.tracking_module.some_sensor_over_black_line()):
-                    break
+                    in_black_line += 1
+
+                    if in_black_line >= self.spin_to_reverse_consistent_in_black_line:
+                        break
+                else:
+                    in_black_line = 0
                 
             self.motors.soft_stop()
             self.return_to_simple_straight_line_start()
@@ -303,9 +329,9 @@ class Robot:
                 raise exception
             
                         
-    def wait_and_track_line(self, mode = LineMode.CIRCUIT):
+    def wait_and_track_line(self, line_mode = LineMode.CIRCUIT):
         self.initial_wait_and_notify_start()
-        self.track_line(mode)
+        self.track_line(line_mode)
 
     def return_to_simple_straight_line_start(self):
         exception = None
@@ -325,13 +351,20 @@ class Robot:
             
             aux_desired_duty_cycle = self.motors.desired_left_duty_cycle
             self.motors.set_lower_desired_duty_cycle()
+
+            both_middle_sensors_over_black_line_times = 0
             
             while time.time() < timeout_start + timeout:
                 self.tracking_module.set_sensors_input_value()
 
                 if self.tracking_module.both_middle_sensors_over_black_line():
-                    self.motors.init_desired_duty_cycle(aux_desired_duty_cycle)
-                    return
+                    both_middle_sensors_over_black_line_times += 1
+
+                    if both_middle_sensors_over_black_line_times >= self.car_straight:
+                        self.motors.init_desired_duty_cycle(aux_desired_duty_cycle)
+                        return
+                else:
+                    both_middle_sensors_over_black_line_times = 0
 
                 self.adjust_to_line()
 
@@ -392,7 +425,7 @@ class Robot:
                     
         return True
 
-    def track_line(self, mode = LineMode.CIRCUIT):
+    def track_line(self, line_mode = LineMode.CIRCUIT):
         # False means that sensor is over the black line
         # If the the sensor is over the black line, 
         # light is absorved by the black line and it doesn't return to sensor (False)
@@ -446,7 +479,8 @@ class Robot:
                     if (not self.adjust_to_line()):
                         break
                     
-            if (mode == LineMode.CIRCUIT):
+            if (line_mode == LineMode.CIRCUIT.value):
+                print('\nPaso por donde no tengo que pasar')
                 # The car stops in a multiple horizontal black line so in order to start again in a future run
                 # the car must return to the place where the line is a simple straight line
                 self.return_to_simple_straight_line_start()
