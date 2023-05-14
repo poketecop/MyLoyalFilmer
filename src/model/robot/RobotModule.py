@@ -37,6 +37,11 @@ class Mode(Enum):
     TEST_TWO_CONSECUTIVE_FILMINGS = 13
     INFINITE_WAIT_TRACK_LINE_WAIT_REVERSE_TRACK_LINE = 14,
     INFINITE_TRACK_LINE = 15,
+    TRACK_LINE_180_AND_RETURN = 16,
+
+class LineMode(Enum):
+    LINE = 1
+    CIRCUIT = 2
     
 class Robot:
 
@@ -158,7 +163,8 @@ class Robot:
                 self.infinite_wait_track_line_wait_reverse_track_line()
             elif self.mode == Mode.INFINITE_TRACK_LINE.name:
                 self.infinite_track_line()
-
+            elif self.mode == Mode.TRACK_LINE_180_AND_RETURN.name:
+                self.track_line_180_and_return()
             
         except Exception as error:
             print(error)
@@ -243,9 +249,63 @@ class Robot:
         while thread1.is_alive():
             time.sleep(2)
     
-    def wait_and_track_line(self):
+    def track_line_180_and_return(self):
+        self.infinite = True
+        self.wait_and_track_line(LineMode.LINE)
+        self.spin_to_reverse_line()
+        self.track_line(LineMode.LINE)
+        self.spin_to_reverse_line()
+        self.motors.final_stop()
+
+    def spin_to_reverse_line(self):
+        self.motors.set_lower_desired_duty_cycle()
+        self.motors.spin_right()
+        
+        exception = None
+        
+        timeout = self.process_timeout   # [seconds]
+
+        timeout_start = time.time()
+
+        consistent_out_of_black_line = 2
+        out_of_black_line = 0
+
+        try:
+            while time.time() < timeout_start + timeout:
+                self.tracking_module.set_sensors_input_value()
+
+                if self.tracking_module.none_sensors_over_black_line():
+                    out_of_black_line += 1
+
+                    if out_of_black_line >= consistent_out_of_black_line:
+                        break
+                else:
+                    out_of_black_line = 0
+            
+            while time.time() < timeout_start + timeout:
+                self.tracking_module.set_sensors_input_value()
+
+                if (self.tracking_module.some_sensor_over_black_line()):
+                    break
+                
+            self.motors.soft_stop()
+            self.return_to_simple_straight_line_start()
+
+        except Exception as e:
+            exception = e
+            print('\nError in track_line: ' + str(e))
+            print('\n' + traceback.format_exc())
+        finally:
+            self.motors.soft_stop()
+
+            # Propagate the exception.
+            if exception:
+                raise exception
+            
+                        
+    def wait_and_track_line(self, mode = LineMode.CIRCUIT):
         self.initial_wait_and_notify_start()
-        self.track_line()
+        self.track_line(mode)
 
     def return_to_simple_straight_line_start(self):
         exception = None
@@ -332,7 +392,7 @@ class Robot:
                     
         return True
 
-    def track_line(self):
+    def track_line(self, mode = LineMode.CIRCUIT):
         # False means that sensor is over the black line
         # If the the sensor is over the black line, 
         # light is absorved by the black line and it doesn't return to sensor (False)
@@ -386,9 +446,10 @@ class Robot:
                     if (not self.adjust_to_line()):
                         break
                     
-            # The car stops in a multiple horizontal black line so in order to start again in a future run
-            # the car must return to the place where the line is a simple straight line
-            self.return_to_simple_straight_line_start()
+            if (mode == LineMode.CIRCUIT):
+                # The car stops in a multiple horizontal black line so in order to start again in a future run
+                # the car must return to the place where the line is a simple straight line
+                self.return_to_simple_straight_line_start()
         except Exception as e:
             exception = e
             print('\nError in track_line: ' + str(e))

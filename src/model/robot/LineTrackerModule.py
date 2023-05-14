@@ -270,3 +270,24 @@ class LineTracker:
         
         return False
     
+    def none_sensors_over_black_line(self):
+        # 4 tracking pins level status
+        # 1 1 1 1
+        if (self.TrackSensorLeftValue2 == True and
+            self.TrackSensorLeftValue1 == True and 
+            self.TrackSensorRightValue1 == True and
+            self.TrackSensorRightValue2 == True):
+            
+            return True
+        
+        return False
+    
+    def some_sensor_over_black_line(self):
+        if (self.TrackSensorLeftValue2 == False or
+            self.TrackSensorLeftValue1 == False or 
+            self.TrackSensorRightValue1 == False or
+            self.TrackSensorRightValue2 == False):
+            
+            return True
+        
+        return False
